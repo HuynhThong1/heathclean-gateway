@@ -110,12 +110,50 @@ Model names rot. `gemini-2.0-flash` — the old default here — and the entire
 `gemini-2.5-*` line now return 404 "no longer available to new users", which is
 why the default is the `gemini-flash-latest` alias; pin a version in `.env` when
 a comparison has to be reproducible. A live model can still return **503** under
-load. That one is transient: retry.
+load. That one is transient: retry. **429** is not: the free tier's daily quota
+is per model and small enough to exhaust in an afternoon of testing, and it
+resets at midnight Pacific.
+
+`gemini-3.1-flash-lite` is what `.env` pins. On the phở photo it produced results
+identical to `gemini-3.6-flash` — same dish, same 650 g, same 585 kcal — and it
+has its own quota budget, which is what mattered once 3.6 hit 429. Choosing it on
+"which model names dishes more specifically in three words" was the wrong test;
+the task is JSON with a base dish name and a gram estimate, and on that they tied.
+
+### Confidence is not calibrated
+
+Three photos through `gemini-3.1-flash-lite`:
+
+| Photo | Result | Confidence | |
+| --- | --- | --- | --- |
+| Phở | Phở bò · 650 g · 585 kcal | 1.00 | correct |
+| Bún bò Huế | **Phở bò** · 650 g · 585 kcal | **0.98** | wrong |
+| Bánh mì | Bánh mì thịt · 250 g · 625 kcal | 0.95 | correct |
+
+The miss is a fair one — two beef noodle soups in broth — but it came back at
+0.98. The client flags items below 0.75 for checking (`plan.md` §4), so that
+mechanism will not catch this class of error at all: a wrong dish arrives looking
+certain. The nutrition gap here is ~14% (bún bò Huế is 105 kcal/100 g against
+phở bò's 90).
+
+What protects the user is that the dish name is shown prominently and can be
+corrected, not the confidence number. Three samples say nothing about calibration
+in general — but they are enough to stop treating a high figure as a guarantee.
 
 The nutrition table in `app/nutrition/vietnamese_foods.py` holds approximate
 reference values so the pipeline is exercisable — it is **not** a sourced
 database. `plan.md` Phase 3 replaces it with USDA and Open Food Facts. Do not
 ship it to real users as fact.
+
+It is 88 rows now rather than 16. On a set of 28 base dish names the old table
+resolved 7; this one resolves 28. `_key` also strips Vietnamese accents, so one
+row absorbs "Phở bò", "pho bo" and "PHO BO" instead of needing an alias each —
+that is normalisation, not fuzzy matching, and `lookup` is still exact. A
+preparation variant like "Phở bò tái chín" deliberately still misses.
+
+Two properties the tests hold in place: broth dishes are less calorie-dense than
+rice plates (a 650 g bowl and a 250 g plate are not the same food), and every row
+is self-consistent under 4/4/9 kcal per gram — that check caught a typo.
 
 ## Privacy
 
