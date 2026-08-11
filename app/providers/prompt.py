@@ -3,6 +3,14 @@
 Shared by every hosted provider so the contract asked of each model is
 identical — otherwise comparing two models would also be comparing two prompts.
 Adapted from plan.md §8.
+
+**The granularity of the naming is load-bearing.** `vietnamese_foods` is keyed
+on whole dishes, and `lookup` is exact-match on purpose, so a model that
+decomposes a bowl of phở into noodles, broth and beef resolves *nothing* — every
+item comes back with zero nutrition even though "Phở bò" is right there in the
+table. Asking for menu-level names is what keeps recognition and nutrition at
+the same level of detail, which is also what plan.md §2 divides between them:
+the model says which dish, the database says what it is worth.
 """
 
 import json
@@ -12,10 +20,20 @@ from .base import ProviderError, RecognizedFood
 
 RECOGNITION_PROMPT = """Analyze this meal image.
 
-Identify every visible food item. Vietnamese dishes should be named in
-Vietnamese, with an English name alongside.
+Name each dish the way a Vietnamese menu would list it — the dish as served,
+not the ingredients it is made from.
 
-Estimate portion size in grams when reasonably possible.
+A bowl of phở is ONE item, "Phở bò". It is not rice noodles plus broth plus
+beef plus herbs. A cơm tấm plate is SEVERAL items — "Cơm tấm", "Sườn nướng",
+"Trứng ốp la" — because a menu lists those separately.
+
+Use the dish's common base name and leave preparation variants out of it:
+"Phở bò", not "Phở bò tái chín"; "Cơm gà", not "Cơm gà xối mỡ".
+
+Vietnamese dishes should be named in Vietnamese, with an English name
+alongside.
+
+Estimate the portion size of each dish in grams when reasonably possible.
 
 Do NOT calculate calories.
 

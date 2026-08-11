@@ -27,6 +27,21 @@ python3 -m venv .venv
 .venv/bin/python -m uvicorn app.main:app --reload --port 8000
 ```
 
+Configuration comes from a `.env` file in the repo root (gitignored), loaded by
+`app/__init__.py` — it has to happen there rather than in `main`, because
+`registry` builds every provider at import time and each one reads its
+configuration in `__init__`. An already-exported variable still wins, so a
+one-off `GEMINI_MODEL=… uvicorn …` does what it looks like it does.
+
+```bash
+MODEL_PROVIDER=gemini
+GEMINI_API_KEY=…
+GEMINI_MODEL=gemini-3.6-flash
+```
+
+Changing `.env` needs a **restart**: `--reload` watches code, not the
+environment, and providers have already read it by then.
+
 ```bash
 curl -X POST http://127.0.0.1:8000/v1/meals/analyze \
   -F "image=@meal.jpg;type=image/jpeg"
@@ -71,9 +86,31 @@ prompts.
 
 `mock` is exercised end to end by the test suite and by hand over HTTP.
 
-**`gemini` and `qwen` have never been run.** No API key or endpoint was
-available when they were written, so their request shapes follow each vendor's
-published contract but are unproven. Treat the first live call as the real test.
+**`gemini` is verified against the live API.** A photo of phở resolved to
+`Phở bò`, 650 g, 585 kcal at confidence 0.95 — recognition, parsing and the
+nutrition lookup, all the way through.
+
+Getting there took two fixes, and both were to the *prompt* rather than the code:
+
+1. The model first returned the **ingredients** — bánh phở, thịt bò, nước dùng,
+   hành lá — and not one of them resolved. `vietnamese_foods` is keyed on whole
+   dishes, so asking for "every visible food item" guarantees zero calories on a
+   dish that is sitting in the table.
+2. Naming at menu level then gave `Phở bò tái chín`, which still missed:
+   `lookup` is exact-match by design and menu names carry preparation variants.
+   The prompt now asks for the base dish name.
+
+So a scan can come back 0 kcal with nothing whatsoever wrong in the code. If
+that happens, suspect the granularity of the names before anything else.
+
+**`qwen` has never been run.** No endpoint was available, so its request shape
+follows the published OpenAI-compatible contract but is unproven.
+
+Model names rot. `gemini-2.0-flash` — the old default here — and the entire
+`gemini-2.5-*` line now return 404 "no longer available to new users", which is
+why the default is the `gemini-flash-latest` alias; pin a version in `.env` when
+a comparison has to be reproducible. A live model can still return **503** under
+load. That one is transient: retry.
 
 The nutrition table in `app/nutrition/vietnamese_foods.py` holds approximate
 reference values so the pipeline is exercisable — it is **not** a sourced

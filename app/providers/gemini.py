@@ -1,8 +1,16 @@
 """Gemini provider — plan.md §31 nominates the free tier for the POC.
 
-**Unverified.** No API key was available when this was written, so the request
-shape follows Google's published REST contract but has never been run. Treat
-the first live call as the real test.
+Verified against the live API: a photo of phở came back named in Vietnamese
+with per-item confidence, so the request shape and the parser are right.
+
+Two things the first live calls taught, both about model names rather than code:
+`gemini-2.0-flash` and the entire `gemini-2.5-*` line return 404 "no longer
+available to new users", and a working model can still return 503 under load —
+that one is transient and a retry clears it.
+
+Free-tier note: Google may use free-tier prompts and responses to improve its
+models. These are meal photos, so move to a paid tier or Vertex AI before real
+users, whatever `plan.md` §20 promises about the gateway not storing them.
 """
 
 import base64
@@ -25,7 +33,12 @@ class GeminiProvider(FoodRecognitionProvider):
 
     def __init__(self) -> None:
         self._api_key: Optional[str] = os.getenv("GEMINI_API_KEY")
-        self._model = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+        # An alias rather than a pinned version, because a pinned default rots:
+        # `gemini-2.0-flash` was the default here and Google has retired it —
+        # along with the whole 2.5 line for new keys — so a fresh clone with no
+        # GEMINI_MODEL got a 404 that said nothing about the cause. Pin a
+        # version in `.env` when a comparison has to be reproducible.
+        self._model = os.getenv("GEMINI_MODEL", "gemini-flash-latest")
         self._timeout = float(os.getenv("PROVIDER_TIMEOUT_SECONDS", "30"))
 
     @property
