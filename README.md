@@ -14,7 +14,8 @@ sees — only which foods get named.
 ```
 photo ──> provider (Qwen / Gemini / mock) ──> [{name, grams, confidence}]
                                                       │
-                                          nutrition resolver
+                              ordered nutrition sources
+                                  (USDA / OFF / local)
                                                       │
                                     [{name, grams, kcal, p/c/f}] + total
 ```
@@ -42,6 +43,22 @@ GEMINI_MODEL=gemini-3.6-flash
 Changing `.env` needs a **restart**: `--reload` watches code, not the
 environment, and providers have already read it by then.
 
+Copy `.env.example` as a starting point. Nutrition sources are opt-in and
+ordered; the first exact name match wins:
+
+```bash
+NUTRITION_SOURCES=usda,openfoodfacts,local
+USDA_API_KEY=…
+OPENFOODFACTS_USER_AGENT=HeathFirst/0.1 (team@example.com)
+```
+
+The default is only `local`, so tests and a fresh clone never make hidden
+network calls. USDA requires a [FoodData Central API key](https://fdc.nal.usda.gov/api-guide/).
+Open Food Facts requires an identifying User-Agent and is subject to its
+[API terms, rate limits and database licence](https://openfoodfacts.github.io/openfoodfacts-server/api/).
+Both adapters accept only an exact normalized name match; a merely similar
+search result stays unresolved for the user to correct.
+
 ```bash
 curl -X POST http://127.0.0.1:8000/v1/meals/analyze \
   -F "image=@meal.jpg;type=image/jpeg"
@@ -68,6 +85,11 @@ curl -X POST http://127.0.0.1:8000/v1/meals/analyze \
 
 `GET /v1/providers` lists what is registered and which are usable right now, so
 a client can avoid offering a provider that has no key.
+
+`GET /v1/nutrition/sources` reports lookup order and configuration. Every
+resolved item also returns `nutritionSource`, `nutritionSourceId`,
+`nutritionSourceURL`, and `nutritionIsReference`, so the client can retain and
+show where its numbers came from.
 
 | Provider | Env | Notes |
 | --- | --- | --- |
@@ -142,8 +164,10 @@ in general — but they are enough to stop treating a high figure as a guarantee
 
 The nutrition table in `app/nutrition/vietnamese_foods.py` holds approximate
 reference values so the pipeline is exercisable — it is **not** a sourced
-database. `plan.md` Phase 3 replaces it with USDA and Open Food Facts. Do not
-ship it to real users as fact.
+database. It remains an explicit fallback and responses mark its rows as
+`nutritionIsReference: true`. Do not ship those rows to real users as fact;
+configure USDA/Open Food Facts first and replace the Vietnamese fallback with
+a licensed, cited national dataset when one is selected.
 
 It is 88 rows now rather than 16. On a set of 28 base dish names the old table
 resolved 7; this one resolves 28. `_key` also strips Vietnamese accents, so one

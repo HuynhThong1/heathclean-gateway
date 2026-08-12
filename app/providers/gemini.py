@@ -69,10 +69,16 @@ class GeminiProvider(FoodRecognitionProvider):
         }
 
         url = _ENDPOINT.format(model=self._model)
-        async with httpx.AsyncClient(timeout=self._timeout) as client:
-            response = await client.post(
-                url, params={"key": self._api_key}, json=payload
-            )
+        try:
+            async with httpx.AsyncClient(timeout=self._timeout) as client:
+                response = await client.post(
+                    url, params={"key": self._api_key}, json=payload
+                )
+        except httpx.HTTPError as error:
+            # Transport failures are provider availability failures, not an
+            # unhandled gateway 500. `main` maps ProviderError to HTTP 502 so
+            # the iOS client can offer a retry.
+            raise ProviderError("Gemini request failed: {}".format(error)) from error
         if response.status_code != 200:
             raise ProviderError(
                 "Gemini returned {}: {}".format(response.status_code, response.text[:200])

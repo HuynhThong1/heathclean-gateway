@@ -13,7 +13,8 @@ from typing import List, Optional
 from fastapi import FastAPI, File, Header, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
-from .nutrition.resolver import resolve, total
+from .nutrition.repository import build_repository
+from .nutrition.resolver import resolve_with_repository, total
 from .providers import registry
 from .providers.base import ProviderError
 
@@ -25,6 +26,7 @@ app = FastAPI(
     version="0.1.0",
     summary="Recognizes foods in a meal photo and resolves their nutrition.",
 )
+nutrition_repository = build_repository()
 
 
 class AnalyzedItem(BaseModel):
@@ -39,6 +41,10 @@ class AnalyzedItem(BaseModel):
     #: False when the food is not in the nutrition database. The client must ask
     #: the user rather than present zeros as fact.
     resolved: bool
+    nutrition_source: Optional[str] = Field(default=None, alias="nutritionSource")
+    nutrition_source_id: Optional[str] = Field(default=None, alias="nutritionSourceId")
+    nutrition_source_url: Optional[str] = Field(default=None, alias="nutritionSourceURL")
+    nutrition_is_reference: bool = Field(default=False, alias="nutritionIsReference")
 
     model_config = {"populate_by_name": True}
 
@@ -67,6 +73,12 @@ async def providers() -> dict:
     """What models exist and which are usable — so the client can show the
     truth rather than offering a provider that has no key."""
     return {"default": registry.DEFAULT_PROVIDER, "providers": registry.available()}
+
+
+@app.get("/v1/nutrition/sources")
+async def nutrition_sources() -> dict:
+    """Configured lookup order and whether each source has its credentials."""
+    return {"sources": nutrition_repository.status()}
 
 
 @app.post("/v1/meals/analyze", response_model=AnalyzeResponse)
@@ -107,7 +119,7 @@ async def analyze_meal(
         # distinguishes this from a bad request so it can offer a retry.
         raise HTTPException(status_code=502, detail=str(error))
 
-    items = resolve(foods)
+    items = await resolve_with_repository(foods, nutrition_repository)
     totals = total(items)
 
     return AnalyzeResponse(
@@ -122,6 +134,10 @@ async def analyze_meal(
                 fat=item.fat,
                 confidence=item.confidence,
                 resolved=item.resolved,
+                nutritionSource=item.nutrition_source,
+                nutritionSourceId=item.nutrition_source_id,
+                nutritionSourceURL=item.nutrition_source_url,
+                nutritionIsReference=item.nutrition_is_reference,
             )
             for item in items
         ],

@@ -55,12 +55,15 @@ class QwenProvider(FoodRecognitionProvider):
         if self._api_key:
             headers["Authorization"] = "Bearer {}".format(self._api_key)
 
-        async with httpx.AsyncClient(timeout=self._timeout) as client:
-            response = await client.post(
-                "{}/chat/completions".format(self._base_url),
-                json=payload,
-                headers=headers,
-            )
+        try:
+            async with httpx.AsyncClient(timeout=self._timeout) as client:
+                response = await client.post(
+                    "{}/chat/completions".format(self._base_url),
+                    json=payload,
+                    headers=headers,
+                )
+        except httpx.HTTPError as error:
+            raise ProviderError("Qwen request failed: {}".format(error)) from error
         if response.status_code != 200:
             raise ProviderError(
                 "Qwen returned {}: {}".format(response.status_code, response.text[:200])

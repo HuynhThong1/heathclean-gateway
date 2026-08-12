@@ -1,12 +1,16 @@
+import asyncio
 import io
 
+import httpx
 import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
 from app.nutrition.resolver import resolve, total
 from app.providers.base import ProviderError, RecognizedFood
+from app.providers.gemini import GeminiProvider
 from app.providers.prompt import parse_recognition_json
+from app.providers.qwen import QwenProvider
 
 client = TestClient(app)
 
@@ -28,6 +32,12 @@ def test_providers_lists_every_model_and_whether_it_is_usable():
     assert configured["mock"] is True
 
 
+def test_nutrition_sources_report_configuration_and_lookup_order():
+    assert client.get("/v1/nutrition/sources").json() == {
+        "sources": [{"name": "local", "configured": True}]
+    }
+
+
 def test_analyze_returns_items_and_a_total():
     response = client.post("/v1/meals/analyze", files=_image())
     assert response.status_code == 200
@@ -38,6 +48,9 @@ def test_analyze_returns_items_and_a_total():
     for item in body["items"]:
         assert item["weight"] > 0
         assert 0.0 <= item["confidence"] <= 1.0
+        if item["resolved"]:
+            assert item["nutritionSource"] == "local_reference"
+            assert item["nutritionIsReference"] is True
 
     # The total is the sum of the items, not a separate claim.
     assert body["total"]["calories"] == pytest.approx(
@@ -79,6 +92,29 @@ def test_a_provider_without_a_key_fails_as_a_gateway_error():
     assert response.status_code == 502
 
 
+@pytest.mark.parametrize(
+    "provider_factory, environment",
+    [
+        (GeminiProvider, {"GEMINI_API_KEY": "test-key"}),
+        (QwenProvider, {"QWEN_BASE_URL": "https://qwen.invalid/v1"}),
+    ],
+)
+def test_provider_transport_failures_are_retryable_gateway_errors(
+    monkeypatch, provider_factory, environment
+):
+    for key, value in environment.items():
+        monkeypatch.setenv(key, value)
+
+    async def fail_request(*args, **kwargs):
+        raise httpx.ConnectError("offline")
+
+    monkeypatch.setattr(httpx.AsyncClient, "post", fail_request)
+    provider = provider_factory()
+
+    with pytest.raises(ProviderError, match="request failed"):
+        asyncio.run(provider.recognize(b"image", "image/jpeg"))
+
+
 def test_non_images_and_empty_uploads_are_rejected():
     assert client.post("/v1/meals/analyze", files=_image(mime="text/plain")).status_code == 415
     assert client.post("/v1/meals/analyze", files=_image(payload=b"")).status_code == 400
@@ -92,6 +128,8 @@ def test_nutrition_scales_with_grams():
     # 130 kcal / 100 g at 200 g
     assert items[0].calories == 260
     assert items[0].resolved is True
+    assert items[0].nutrition_source == "local_reference"
+    assert items[0].nutrition_is_reference is True
 
 
 def test_an_unknown_food_keeps_its_weight_and_reports_zero_nutrition():

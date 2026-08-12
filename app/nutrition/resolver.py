@@ -6,10 +6,13 @@ therefore cannot change the arithmetic (plan.md §2).
 """
 
 from dataclasses import dataclass
+import asyncio
 from typing import List, Optional
 
 from ..providers.base import RecognizedFood
-from .vietnamese_foods import lookup
+from .base import NutritionRecord
+from .local import local_record
+from .repository import NutritionRepository
 
 
 @dataclass(frozen=True)
@@ -25,50 +28,62 @@ class ResolvedItem:
     #: False when the food was not in the database. Weight is kept, nutrition is
     #: zero, and the client must ask the user rather than pretend.
     resolved: bool
+    nutrition_source: Optional[str] = None
+    nutrition_source_id: Optional[str] = None
+    nutrition_source_url: Optional[str] = None
+    nutrition_is_reference: bool = False
 
 
 def _round(value: float, places: int = 1) -> float:
     return round(value + 0.0, places)
 
 
-def resolve(foods: List[RecognizedFood]) -> List[ResolvedItem]:
-    items: List[ResolvedItem] = []
-    for food in foods:
-        entry = lookup(food.name)
-        if entry is None and food.name_en:
-            entry = lookup(food.name_en)
-
-        if entry is None:
-            items.append(
-                ResolvedItem(
-                    name=food.name,
-                    name_en=food.name_en,
-                    weight_grams=_round(food.estimated_weight_grams),
-                    calories=0.0,
-                    protein=0.0,
-                    carbs=0.0,
-                    fat=0.0,
-                    confidence=food.confidence,
-                    resolved=False,
-                )
-            )
-            continue
-
-        ratio = food.estimated_weight_grams / 100.0
-        items.append(
-            ResolvedItem(
-                name=entry.name,
-                name_en=entry.name_en,
-                weight_grams=_round(food.estimated_weight_grams),
-                calories=_round(entry.calories_per_100g * ratio, 0),
-                protein=_round(entry.protein_per_100g * ratio),
-                carbs=_round(entry.carbs_per_100g * ratio),
-                fat=_round(entry.fat_per_100g * ratio),
-                confidence=food.confidence,
-                resolved=True,
-            )
+def _resolve_food(
+    food: RecognizedFood, entry: Optional[NutritionRecord]
+) -> ResolvedItem:
+    if entry is None:
+        return ResolvedItem(
+            name=food.name,
+            name_en=food.name_en,
+            weight_grams=_round(food.estimated_weight_grams),
+            calories=0.0,
+            protein=0.0,
+            carbs=0.0,
+            fat=0.0,
+            confidence=food.confidence,
+            resolved=False,
         )
-    return items
+
+    ratio = food.estimated_weight_grams / 100.0
+    return ResolvedItem(
+        name=entry.name,
+        name_en=entry.name_en,
+        weight_grams=_round(food.estimated_weight_grams),
+        calories=_round(entry.calories_per_100g * ratio, 0),
+        protein=_round(entry.protein_per_100g * ratio),
+        carbs=_round(entry.carbs_per_100g * ratio),
+        fat=_round(entry.fat_per_100g * ratio),
+        confidence=food.confidence,
+        resolved=True,
+        nutrition_source=entry.source,
+        nutrition_source_id=entry.source_id,
+        nutrition_source_url=entry.source_url,
+        nutrition_is_reference=entry.is_reference,
+    )
+
+
+def resolve(foods: List[RecognizedFood]) -> List[ResolvedItem]:
+    """Synchronous local resolver retained for unit tests and simple tooling."""
+    return [_resolve_food(food, local_record(food.name, food.name_en)) for food in foods]
+
+
+async def resolve_with_repository(
+    foods: List[RecognizedFood], repository: NutritionRepository
+) -> List[ResolvedItem]:
+    entries = await asyncio.gather(
+        *(repository.lookup(food.name, food.name_en) for food in foods)
+    )
+    return [_resolve_food(food, entry) for food, entry in zip(foods, entries)]
 
 
 @dataclass(frozen=True)

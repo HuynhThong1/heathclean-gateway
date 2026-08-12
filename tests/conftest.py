@@ -17,3 +17,10 @@ import time — pytest loads conftest first, which is what makes it work.
 import os
 
 os.environ["MODEL_PROVIDER"] = "mock"
+# Provider availability tests must never inherit live credentials from a
+# developer's `.env`. Empty values survive `load_dotenv(override=False)` and
+# keep the suite offline and deterministic.
+os.environ["GEMINI_API_KEY"] = ""
+os.environ["QWEN_API_KEY"] = ""
+os.environ["QWEN_BASE_URL"] = ""
+os.environ["NUTRITION_SOURCES"] = "local"
