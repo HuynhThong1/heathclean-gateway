@@ -1,0 +1,19 @@
+# `.venv/` sits in the repo root and is the largest thing here by far — without
+# this the build context is hundreds of megabytes of host-architecture wheels
+# that the image would never use anyway.
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# The key must be mounted at run time, never baked into a layer: anyone who can
+# pull the image can read it back out of the history. The glob is not redundant:
+# a `.env.bak.<sha>` beside it is just as real a copy, and `.env` alone matches
+# only that one name.
+.env
+.env.*
+
+.git/
+tests/
+requirements-dev.txt
+README.md

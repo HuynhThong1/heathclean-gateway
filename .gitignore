@@ -3,3 +3,8 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .env
+# `.env` alone matches that one name, so a `.env.bak.<sha>` sitting beside it —
+# a real copy, real keys — was still offered to `git add`. Ignore the family and
+# re-admit the one file that is meant to be tracked.
+.env.*
+!.env.example

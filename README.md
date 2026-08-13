@@ -66,6 +66,102 @@ curl -X POST http://127.0.0.1:8000/v1/meals/analyze \
 
 Tests: `.venv/bin/python -m pytest tests -q`
 
+## Deploying to a VPS
+
+The service is stateless — no database, no disk writes, no session — so a
+deployment is one container and nothing else.
+
+### Push an image, or build on the VPS
+
+Both work. What must not be skipped either way is the architecture.
+
+**`--platform linux/amd64` is mandatory when building on a Mac.** Apple silicon
+produces `linux/arm64` by default, a VPS is almost always `amd64`, and the
+mismatch is not caught at build time — the container starts and dies with
+`exec format error`.
+
+```bash
+# On the Mac: build for the target and push
+docker buildx build --platform linux/amd64 \
+  -t ttl.sh/healthclean-gateway:24h --push .
+```
+
+```bash
+# On the VPS: no source tree needed, only this file and .env
+cp .env.example .env
+openssl rand -hex 32          # paste into GATEWAY_API_KEY
+$EDITOR .env                  # MODEL_PROVIDER, GEMINI_API_KEY, GATEWAY_API_KEY
+docker compose pull
+docker compose up -d
+curl -s localhost:8000/healthz
+```
+
+`ttl.sh` is an **ephemeral, anonymous, public** registry: no login, the tag is
+the lifetime, and 24h is its maximum. That makes it a good way to move a build
+onto a box once and a bad thing for a deployment to depend on — the image is
+gone tomorrow, so a host that has pruned it cannot pull again. Anyone who
+guesses the name can pull it too, which is tolerable only because `.env` is
+excluded and the image carries no credentials. For anything lasting, use a real
+registry (GHCR, a private one) or build on the VPS:
+
+```bash
+git clone <this repo> healthclean-gateway && cd healthclean-gateway
+docker compose up -d --build     # no architecture question at all
+```
+
+Docker Hub rate-limits anonymous pulls hard enough to fail a first build, which
+is why the base image here is pulled through `public.ecr.aws`'s mirror of the
+official images rather than from Docker Hub directly.
+
+### The API key is not optional here
+
+Every `/v1` route requires `X-API-Key` once `GATEWAY_API_KEY` is set, and
+`docker-compose.yml` refuses to start without it. An unset key leaves the
+gateway open, which is right on localhost and wrong on a public port: one
+`POST /v1/meals/analyze` spends a call on the operator's Gemini key, and the
+free tier's daily quota is small enough to exhaust in an afternoon. `/healthz`
+stays unauthenticated for the container healthcheck.
+
+```bash
+curl -X POST http://<vps>:8000/v1/meals/analyze \
+  -H "X-API-Key: $GATEWAY_API_KEY" \
+  -F "image=@meal.jpg;type=image/jpeg"
+```
+
+The key is **mounted, never baked in** — `.dockerignore` excludes `.env`, and
+compose mounts it read-only at `/srv/.env`. Anyone who can pull an image can
+read its layers, so a key copied in at build time is a key published.
+
+That mount is why **`chmod 600 .env` on the VPS is the wrong instinct.** The
+container runs as uid 10001, a Linux bind mount passes the host's ownership
+straight through, and a secrets-tight file owned by the deploy user is then
+unreadable to the process that needs it. It does not fail loudly: compose
+passes `GATEWAY_API_KEY` through `environment:` from its own reading of `.env`
+on the host, so authentication still works and the gateway looks fine — while
+`GEMINI_API_KEY`, which is only ever read from inside, never loads and every
+analysis fails as a provider error. Check `GET /v1/providers` reports
+`"configured": true` after a deploy. Keep the file readable (`644`) and rely on
+the directory for privacy, or `chown 10001` it. (Docker Desktop on macOS hides
+this: its VM shares files without preserving host uid, so a local
+`docker compose` run reads a `600` file happily and a Linux host will not.)
+
+Changing `.env` still needs a restart, for the reason in "Running it" above —
+providers read their configuration at import. Containerised that is
+`docker compose restart`. `GATEWAY_API_KEY` is the exception: it is read per
+request, so rotating it takes effect on the mount without one.
+
+### Plain HTTP is a stopgap
+
+An iOS client cannot reach `http://<ip>:8000` without an App Transport Security
+exception naming that exact address, and the key then crosses the network in
+clear text. That is acceptable while testing against an IP and not acceptable
+in the client's hands.
+
+The fix is a domain, not more configuration. With one pointed at the VPS, put
+Caddy in front — it obtains and renews a certificate unprompted, the compose
+service stops publishing 8000 to the world, and the iOS side drops its ATS
+exception entirely.
+
 ## Switching models
 
 Switching is configuration, never a code change.

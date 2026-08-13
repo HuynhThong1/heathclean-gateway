@@ -1,0 +1,31 @@
+services:
+  gateway:
+    build: .
+    # ttl.sh reads the *tag* as the image's lifetime, so this one is not a
+    # version — it is an expiry, and 24h is the maximum the registry allows.
+    # An untagged reference would resolve to `:latest`, which never exists
+    # there. The registry is anonymous and public: fine for moving a build to
+    # a VPS, not somewhere a deployment can keep depending on.
+    image: ttl.sh/healthclean-gateway:24h
+    container_name: healthclean-gateway
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mounted, not copied. The image stays free of credentials, and changing
+      # a key is `docker compose restart` rather than a rebuild — which is what
+      # the README's "changing .env needs a restart" means once containerised.
+      - ./.env:/srv/.env:ro
+    environment:
+      # Compose reads `.env` for substitution too, so this asserts the key is
+      # actually set and fails the deploy loudly if it is not. An exposed port
+      # with no key is a hosted-model bill anyone can run up.
+      GATEWAY_API_KEY: ${GATEWAY_API_KEY:?set GATEWAY_API_KEY in .env before deploying}
+    healthcheck:
+      # urllib rather than curl: the slim image has no curl, and adding one for
+      # a healthcheck is a whole package for a single GET.
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

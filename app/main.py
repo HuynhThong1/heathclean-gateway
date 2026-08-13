@@ -8,9 +8,10 @@ to disk (plan.md §20). Nothing about the user is stored here at all.
 """
 
 import os
+import secrets
 from typing import List, Optional
 
-from fastapi import FastAPI, File, Header, HTTPException, UploadFile
+from fastapi import Depends, FastAPI, File, Header, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
 from .nutrition.repository import build_repository
@@ -20,6 +21,34 @@ from .providers.base import ProviderError
 
 MAX_IMAGE_BYTES = int(os.getenv("MAX_IMAGE_BYTES", str(8 * 1024 * 1024)))
 ALLOWED_MIME = {"image/jpeg", "image/png", "image/heic", "image/heif", "image/webp"}
+
+
+def require_api_key(
+    x_api_key: Optional[str] = Header(default=None, alias="X-API-Key"),
+) -> None:
+    """Guards every `/v1` route with a shared secret.
+
+    An unset `GATEWAY_API_KEY` leaves the gateway open, which is what a local
+    run wants and what the suite assumes. That default stops being acceptable
+    the moment the port faces the Internet: an analysis costs a call to a hosted
+    model on the operator's key, so an unauthenticated endpoint is someone else's
+    quota to spend. `docker-compose.yml` therefore requires the variable rather
+    than defaulting it.
+
+    `/healthz` stays open on purpose — the container healthcheck and any future
+    reverse proxy probe it, and it reveals nothing.
+
+    Unlike provider configuration this is read per request rather than at import
+    time. It is one `getenv` against a network call, and it keeps the setting
+    testable without reimporting the app.
+    """
+    expected = os.getenv("GATEWAY_API_KEY", "").strip()
+    if not expected:
+        return
+    # compare_digest rather than ==: the comparison must not leak the key
+    # through how long it takes to fail.
+    if not secrets.compare_digest(x_api_key or "", expected):
+        raise HTTPException(status_code=401, detail="Thiếu hoặc sai API key.")
 
 app = FastAPI(
     title="HealthClean AI gateway",
@@ -68,20 +97,24 @@ async def healthz() -> dict:
     return {"status": "ok"}
 
 
-@app.get("/v1/providers")
+@app.get("/v1/providers", dependencies=[Depends(require_api_key)])
 async def providers() -> dict:
     """What models exist and which are usable — so the client can show the
     truth rather than offering a provider that has no key."""
     return {"default": registry.DEFAULT_PROVIDER, "providers": registry.available()}
 
 
-@app.get("/v1/nutrition/sources")
+@app.get("/v1/nutrition/sources", dependencies=[Depends(require_api_key)])
 async def nutrition_sources() -> dict:
     """Configured lookup order and whether each source has its credentials."""
     return {"sources": nutrition_repository.status()}
 
 
-@app.post("/v1/meals/analyze", response_model=AnalyzeResponse)
+@app.post(
+    "/v1/meals/analyze",
+    response_model=AnalyzeResponse,
+    dependencies=[Depends(require_api_key)],
+)
 async def analyze_meal(
     image: UploadFile = File(...),
     x_model_provider: Optional[str] = Header(default=None, alias="X-Model-Provider"),

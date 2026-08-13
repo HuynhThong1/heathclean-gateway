@@ -24,3 +24,10 @@ os.environ["GEMINI_API_KEY"] = ""
 os.environ["QWEN_API_KEY"] = ""
 os.environ["QWEN_BASE_URL"] = ""
 os.environ["NUTRITION_SOURCES"] = "local"
+# Same reasoning, one step further: a developer who has deployed once has a real
+# key in `.env`, and inheriting it makes every `/v1` test 401. The unauthenticated
+# default is what the rest of the suite exercises, so it is pinned here rather
+# than left to whether this machine has ever been used to deploy. Tests that want
+# the guarded behaviour set the variable themselves with `monkeypatch.setenv` —
+# `require_api_key` reads it per request, so that is enough.
+os.environ["GATEWAY_API_KEY"] = ""
