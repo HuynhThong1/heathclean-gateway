@@ -1,0 +1,163 @@
+# The 150 most frequent dish names in MM-Food-100K, which is what the app meets
+# outside Vietnamese food: Western dishes, fruit, and packaged items.
+#
+# Source: https://huggingface.co/datasets/Codatta/MM-Food-100K (OpenRAIL-M,
+# non-commercial). Only the *names* are reproduced here — no images, no
+# nutrition figures — because a name list is what this measures against and
+# it keeps the dataset licence out of this repository.
+#
+# The names are the dataset as it is, unnormalised: it has 19,289 distinct
+# labels for 100,000 images, so "Steamed Bun" and "Steamed Buns" are two of
+# them. That is not tidied up, because a resolver that only matches the tidy
+# spelling is a resolver that fails on real input.
+
+Noodle Soup
+Dumplings
+Hot Pot
+Stir-fried Noodles
+Fried Chicken
+Apple
+Watermelon
+Fried Rice
+Pizza
+Beef Noodle Soup
+Lychee
+Mixed Asian Cuisine
+Grilled Meat Skewers
+Seafood Platter
+Strawberries
+Braised Pork Belly
+Stir-fried Chicken with Vegetables
+Beef Stir-Fry
+Braised Pork
+Vegetable Stir-Fry
+Durian
+Noodle Bowl
+Steamed Fish
+Grapes
+Grilled Skewers
+Apples
+Mixed Chinese Dishes
+Instant Noodles
+Chicken Stir-Fry
+Steamed Buns
+Stir-fried Greens
+Sushi
+Mixed Asian Dishes
+Spicy Crawfish
+Bananas
+Birthday Cake
+Fried Chicken Wings
+Grilled Meat Platter
+Braised Meat
+Shrimp Stir-Fry
+Cooked White Rice
+Vegetable Soup
+Spicy Noodle Soup
+Fruit Salad
+Spicy Noodles
+Crawfish
+Ramen
+Mapo Tofu
+Vegetable Noodles
+Roasted Chicken
+Egg Tart
+Cherries
+Meat Soup
+Steamed Dumplings
+Fried Dumplings
+Sweet and Sour Chicken
+Stir-fried Vegetables
+Peach
+Mixed Asian Meal
+Cheeseburger
+Grilled Steak with Vegetables
+Mango
+Meat Stew
+Stir-fried meat with vegetables
+Boiled Eggs
+Sushi Platter
+Grilled Steak
+Banana
+Crawfish Boil
+Fried Fish
+Grilled Meat
+Hamburger
+Noodle Salad
+Grilled Fish
+Oranges
+Vegetable Salad
+Chicken Soup
+Peaches
+Roasted Chicken with Vegetables
+Roasted Duck
+Beef Stew
+Fruit Cake
+Stir-fried Beef with Vegetables
+Watermelon slices
+Dumpling Soup
+Custard Tart
+Flatbread
+Fried Chicken and Fries
+Shrimp Salad
+Corn on the Cob
+Orange
+Cake
+Pepperoni Pizza
+Seafood Noodle Soup
+Shrimp and Vegetable Stir-Fry
+Stir-fried Meat with Vegetables
+Fried Chicken Sandwich
+Shrimp
+French Fries
+Whole Milk
+Steamed Bun
+Sandwich
+Spring Rolls
+Noodle Stir-Fry
+Stir-fried meat and vegetables
+Potato Chips
+Spicy Chicken Feet
+Custard Tarts
+Mixed Rice Bowl
+Noodle Soup with Meat
+Noodles
+Shrimp Fried Rice
+Stir-fried vegetables with meat
+Mixed Meat Platter
+Vegetable Fried Rice
+Dragon Fruit
+Mixed Skewers
+Boiled Egg
+Meat and Vegetable Soup
+Seafood Soup
+Fish Soup
+Chocolate Cake
+Snack
+Meat and Vegetable Stew
+Stir-fried Meat and Vegetables
+Meatball Soup
+Iced Coffee
+Chicken Rice
+Braised Chicken Feet
+Cheese Pizza
+Breakfast Plate
+Eggs
+Cucumber
+Glazed Chicken Wings
+White Bread
+Oysters
+Fried Shrimp
+Sashimi
+Fish Stew
+Blueberries
+Corn on the cob
+Sweet and Sour Pork
+Milk
+Tomato and Egg Stir-fry
+Mixed Salad
+Chicken Salad
+Spicy Fish Stew
+Mixed Fruits
+Spicy Hot Pot
+Fried Snack

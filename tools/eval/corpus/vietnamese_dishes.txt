@@ -1,0 +1,168 @@
+# Vietnamese dish names, for measuring how much of a real menu the configured
+# NUTRITION_SOURCES chain can resolve.
+#
+# Source: Wikipedia, "List of Vietnamese dishes"
+# https://en.wikipedia.org/wiki/List_of_Vietnamese_dishes — CC BY-SA 4.0.
+#
+# **It is deliberately not derived from app/nutrition/vietnamese_foods.py.**
+# Measuring that table against its own contents would return 100% and mean
+# nothing. This list was written by other people for another purpose, which is
+# the only reason a coverage figure taken against it is worth reading.
+#
+# Names only. A dish name is not the copyrighted asset in a food dataset — the
+# photographs are — so nothing here carries a licence this repository has to
+# honour beyond the attribution above.
+
+Bánh canh
+Bánh đa cua
+Bánh hỏi
+Bánh tằm cà ri
+Bún bò Huế
+Bún bung
+Bún cá
+Bún chả cá
+Chạo tôm
+Bún chả
+Bún đậu mắm tôm
+Bún mắm
+Bún mọc
+Bún măng vịt
+Bún ốc
+Bún riêu
+Bún thịt nướng
+Bún thang
+Cao lầu
+Miến
+Hủ tiếu
+Mì
+Mì Quảng
+Mì xào giòn
+Phở
+Miến lươn
+Miến trộn
+Cơm nắm
+Cơm tấm
+Cơm rượu
+Cơm cháy
+Cơm hến
+Cơm gà Quảng Nam
+Cơm lam
+Cơm chiên
+Xôi
+Xôi chiên
+Xôi đỗ xanh
+Xôi gà
+Xôi gấc
+Xôi lá cẩm
+Xôi đậu phộng
+Xôi ngũ sắc
+Xôi sắn
+Xôi vò
+Xôi xéo
+Canh chua
+Canh khoai mỡ
+Khổ qua nhồi thịt
+Ốc nấu chuối đậu
+Cháo
+Cháo lòng
+Lẩu
+Phá lấu
+Súp măng cua
+Thịt kho tàu
+Bò kho
+Bánh chưng
+Bánh giầy
+Bánh đa nướng
+Bánh gối
+Bánh lá
+Bánh cuốn
+Bánh tôm
+Bánh tôm Hồ Tây
+Bánh tráng
+Bánh ướt
+Chả giò
+Gỏi cuốn
+Gỏi cá
+Gỏi cá trích
+Món cuốn
+Bánh bèo
+Bánh căn
+Bánh đúc
+Bánh khọt
+Bánh mì
+Bánh rế
+Bánh xèo
+Bánh bột chiên
+Bánh phồng tôm
+Bánh cống
+Bánh quai vạc
+Bánh tai
+Bánh tai heo
+Bánh ú
+Bánh bao
+Bánh bột lọc
+Bánh bột lọc trần
+Bánh bột lọc lá
+Bánh cam
+Bánh ít
+Bánh ít trần
+Bánh khúc
+Bánh nậm
+Bánh phu thê
+Bánh rán
+Bánh tẻ
+Bánh giò
+Dồi
+Bò 7 món
+Chả
+Cốm
+Giò lụa
+Nem chua
+Ô mai
+Ốc bươu nhồi thịt
+Chà bông
+Bò nướng lá lốt
+Tiết canh
+Quẩy
+Bánh bò
+Bánh cáy
+Bánh da lợn
+Bánh chuối
+Bánh cốm
+Bánh đậu xanh
+Bánh gai
+Bánh tro
+Bánh in
+Bánh flan
+Bánh kẹp lá dứa
+Bánh khoai mì
+Bánh khảo
+Bánh lọt
+Bánh mật
+Bánh nhãn
+Bánh pía
+Bánh tét
+Bánh tiêu
+Bánh trung thu
+Bánh trôi
+Chè
+Chè trôi nước
+Chuối chiên
+Sữa chua
+Tào phớ
+Thạch sương sáo
+Mè xửng Huế
+Thạch rau câu
+Rượu nếp
+Sâm bổ lượng
+Nước mắm
+Nước chấm
+Tương ớt
+Bia hơi
+Chanh muối
+Nước mía
+Nước sâm
+Rau má
+Sữa đậu nành
+Cà phê sữa đá
+Trà sen

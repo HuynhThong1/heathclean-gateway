@@ -59,6 +59,13 @@ Open Food Facts requires an identifying User-Agent and is subject to its
 Both adapters accept only an exact normalized name match; a merely similar
 search result stays unresolved for the user to correct.
 
+**How much any of that resolves is measurable** — `plan.md` §29's
+nutrition-resolution rate needs no photographs, only dish names. See
+[`tools/eval`](tools/eval/README.md); as of 2026-08-14 the local table answers
+**25% of a Vietnamese menu it did not write**, and adding Open Food Facts takes a
+global corpus from 10% to 70% while returning one branded product's figures
+rather than the dish's.
+
 ```bash
 curl -X POST http://127.0.0.1:8000/v1/meals/analyze \
   -F "image=@meal.jpg;type=image/jpeg"
