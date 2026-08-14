@@ -66,6 +66,40 @@ barcoded products; the chain has no source that knows them. Vietnamese coverage
 moves only when a Vietnamese nutrition dataset replaces the reference table —
 the licensed dataset `plan.md` §10 already requires before release.
 
+## What could replace the reference table
+
+The 25% is the reference table's ceiling, and no source in the chain can raise
+it: Open Food Facts is packaged products and USDA has no Vietnamese dishes. The
+survey behind that is in `tools/nutrition/derive_from_usda.py`; the short of it
+is that **the Vietnamese Food Composition Table is a printed book** (Ministry of
+Health, 2017, print-only per FAO, no licence stated) and **USDA FoodData Central
+is CC0 but contains no dishes** — national tables list *ingredients*, and a
+restaurant dish is not an ingredient. Licensing cannot buy "Bún chả".
+
+So a dish figure has to be **derived**: a recipe in grams over CC0 ingredient
+rows, which makes every number traceable to an `fdcId` instead of asserted. The
+spike ran four dishes:
+
+| Dish | Derived | Current table | Δ kcal |
+| --- | --- | --- | --- |
+| Bánh mì thịt | 244 kcal, 13.3 p | 250, 11.0 p | −6 |
+| Gỏi cuốn | 103 kcal, 10.5 p | 95, 6.0 p | +8 |
+| Cơm tấm | 140 kcal, **8.8 p** | 150, **3.0 p** | −10 |
+| Phở bò | 47 kcal, 3.2 p | 90, 6.0 p | −43 |
+
+Three of four land within 10 kcal/100 g, which says the hand-written rows are
+better than "unsourced" makes them sound. Two disagreements are the interesting
+part:
+
+- **Cơm tấm's 3.0 g protein per 100 g is the row's own error.** That is plain
+  rice's protein (cơm trắng is 2.7). The dish is a rice plate *with a grilled
+  pork chop*, and the app asks the model for grams of the whole plate — so the
+  row under-reports protein by roughly a third of the dish. Cơm gà, right next
+  to it, does include its chicken.
+- **Phở's −43 is the spike's error, not the table's.** The recipe models 400 g of
+  broth as plain water; real bone broth is not water. Broth is the least certain
+  number in any Vietnamese recipe and it dominates a bowl.
+
 ## Rerunning it
 
 The numbers above are a snapshot, not a fixture. `local` is deterministic and
