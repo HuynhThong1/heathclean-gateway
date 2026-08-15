@@ -129,6 +129,14 @@ YOGURT = 171284  # Yogurt, plain, whole milk
 SOYMILK = 175215  # Soymilk (all flavors), unsweetened, with added calcium
 COFFEE = 171890  # Beverages, coffee, brewed, prepared with tap water
 CANE_SYRUP = 167743  # Syrup, cane
+APPLE = 171688  # Apples, raw, with skin
+WATERMELON = 167765  # Watermelon, raw
+MANGO = 169910  # Mangos, raw
+BANANA = 173944  # Bananas, raw
+ORANGE = 169097  # Oranges, raw, all commercial varieties
+PAPAYA = 169926  # Papayas, raw
+GUAVA = 173044  # Guavas, common, raw
+PAK_CHOI = 168517  # Cabbage, chinese (pak-choi), cooked, boiled, drained
 
 
 RECIPES: List[Recipe] = [
@@ -908,5 +916,74 @@ RECIPES: List[Recipe] = [
         "it sits, and the density would depend on when it was weighed. The user "
         "is asked for grams of the drink. Comes out near 90 against an asserted "
         "80, which is what the ice was quietly doing to that figure.",
+    ),
+    # ---- Whole foods, which are one USDA row each rather than a derivation.
+    #
+    # A one-ingredient recipe looks like a joke until you read what it is for.
+    # These rows were **already** USDA's numbers — the asserted table gave banana
+    # 89, apple 52, orange 47, mango 60, papaya 43, guava 68, every one of them
+    # SR Legacy's figure to the decimal. Whoever wrote the table read them off
+    # USDA and did not say so, which is the whole problem in miniature: the
+    # nutrition was never the doubtful part, the *provenance* was. Converting
+    # them moves not one calorie and gives every one of them an `fdcId`.
+    #
+    # So the mechanism is not being abused. `Ingredient(BANANA, 100)` states
+    # exactly the claim being made — this dish is this row — and states it in the
+    # one place a reader already looks.
+    Recipe("Táo", "Apple", [Ingredient(APPLE, 100)]),
+    Recipe("Chuối", "Banana", [Ingredient(BANANA, 100)]),
+    Recipe("Cam", "Orange", [Ingredient(ORANGE, 100)]),
+    Recipe("Xoài", "Mango", [Ingredient(MANGO, 100)]),
+    Recipe("Dưa hấu", "Watermelon", [Ingredient(WATERMELON, 100)]),
+    Recipe("Đu đủ", "Papaya", [Ingredient(PAPAYA, 100)]),
+    Recipe("Ổi", "Guava", [Ingredient(GUAVA, 100)]),
+    Recipe("Dưa leo", "Cucumber", [Ingredient(CUCUMBER, 100)], ["dưa chuột"]),
+    Recipe("Trứng luộc", "Boiled egg", [Ingredient(EGG_BOILED, 100)]),
+    # `Thanh long` stays asserted on purpose: SR Legacy has no dragon fruit and
+    # no pitaya, so there is nothing to cite. Deleting the row instead would send
+    # the dish to the unresolved branch and make the user type figures the table
+    # already has — worse for them, and no more honest, since `is_reference`
+    # already says exactly what that number is.
+    #
+    # ---- Three plates that are dishes rather than rows.
+    Recipe(
+        "Canh rau",
+        "Vegetable soup",
+        [
+            Ingredient(STOCK, 220),
+            Ingredient(PAK_CHOI, 60, "standing in for the greens of the day"),
+            Ingredient(SCALLION, 5),
+            Ingredient(FISH_SAUCE, 5),
+        ],
+        ["canh"],
+        note="The thin soup that comes with a rice meal, not a course. Asserted 30.",
+    ),
+    Recipe(
+        "Cá nướng",
+        "Grilled fish",
+        [
+            Ingredient(TILAPIA, 120),
+            Ingredient(OIL, 4, "brushed on before grilling"),
+            Ingredient(FISH_SAUCE, 5),
+        ],
+        ["ca nuong"],
+        note="Asserted 160.",
+    ),
+    Recipe(
+        "Salad trộn",
+        "Mixed salad",
+        [
+            Ingredient(LETTUCE, 60),
+            Ingredient(CUCUMBER, 40),
+            Ingredient(TOMATO, 40),
+            Ingredient(CARROT, 25),
+            Ingredient(OIL, 6),
+            Ingredient(LIME_JUICE, 6),
+            Ingredient(SUGAR, 3),
+        ],
+        ["salad"],
+        note="`gỏi` was an alias of this row in the asserted table and is not "
+        "one here: gỏi has its own recipe, with shrimp and peanuts, and is a "
+        "different dish from a bowl of dressed leaves. Asserted 60.",
     ),
 ]

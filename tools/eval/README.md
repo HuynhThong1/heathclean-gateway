@@ -36,18 +36,27 @@ something honest to run against.
 | Corpus | before recipes | after the first recipes | now | full chain |
 | --- | --- | --- | --- | --- |
 | Vietnamese (153) | 25% — 39, all asserted | 29% — 45, of which 30 cited | **29% — all 45 cited** | unchanged |
-| Global (150) | 10% — 15 | 10% | 11% — 17, of which **11 asserted** | **67%** on the first 24 |
+| Global (150) | 10% — 15 | 10% | **11% — 17, of which 16 cited** | **67%** on the first 24 |
 
-**Coverage did not move, and that is still not the point.** The Vietnamese
-column went from 30 of 45 answers cited to 45 of 45: every dish the offline
-chain can name is now computed from a recipe over CC0 USDA rows and carries the
-`fdcId`s it was derived from. §10 asks for the *asserted* rows to go, not for
-the percentage to climb, and for this corpus they are gone.
+**Coverage barely moved, and that is still not the point.** Both corpora went
+from part-asserted to almost entirely cited: every dish the offline chain can
+name is now computed from a recipe over CC0 USDA rows and carries the `fdcId`s
+it was derived from. §10 asks for the *asserted* rows to go, not for the
+percentage to climb.
 
-The 11 left on the global corpus are the same job in a different shape. They are
-mostly whole foods — Apple, Banana, Mango, Boiled Egg — which USDA carries
-directly, so each needs a row mapped rather than a dish derived. `Dragon Fruit`
-is the one that will not go that way: SR Legacy does not have it.
+**One row is left asserted, and it stays.** SR Legacy has no dragon fruit and no
+pitaya, so `Thanh long` has nothing to cite. Deleting it would send the dish to
+the unresolved branch and make the user type figures the table already holds —
+worse for them, and no more honest, because `is_reference` already says exactly
+what that number is.
+
+The whole-food half of that clean-up is worth knowing about, because it was not
+what it looked like. Banana, apple, orange, mango, papaya, guava and cucumber
+were **already USDA's figures** — 89, 52, 47, 60, 43, 68, 15, each SR Legacy's
+number to the decimal. Whoever wrote the asserted table read them off USDA and
+did not record it. Converting them moved not one calorie. The nutrition was
+never the doubtful part; the provenance was, and that is the distinction this
+whole measurement exists to make.
 
 **A citation is not a portion.** `Lẩu` and `Chè` now cite USDA for every gram in
 them and are still the two least trustworthy rows in the file, because each
