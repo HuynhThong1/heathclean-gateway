@@ -58,6 +58,15 @@ async def resolve_all(names: List[str], concurrency: int) -> List[Tuple[str, obj
     from app.nutrition.repository import build_repository
 
     repository = build_repository()
+    # Reported from the repository, not from `os.getenv`: importing `app` loads
+    # `.env`, so reading the variable before that prints whatever the shell had
+    # and not what actually ran. This said "local" through a run that was
+    # plainly hitting USDA and Open Food Facts.
+    configured = ", ".join(
+        f"{source['name']}{'' if source['configured'] else ' (unconfigured, skipped)'}"
+        for source in repository.status()
+    )
+    print(f"sources: {configured}")
     # A network source is rate-limited and this is a few hundred names; the
     # semaphore is what keeps a coverage run from looking like an attack.
     gate = asyncio.Semaphore(concurrency)
@@ -130,7 +139,6 @@ def main() -> None:
         os.environ["NUTRITION_SOURCES"] = args.sources
 
     corpora = args.corpus or sorted(p.stem for p in CORPUS_DIR.glob("*.txt"))
-    print(f"NUTRITION_SOURCES={os.getenv('NUTRITION_SOURCES', 'local')}")
 
     for corpus in corpora:
         names = read_corpus(corpus)

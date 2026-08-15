@@ -9,8 +9,27 @@ from app.nutrition.repository import NutritionRepository
 from app.nutrition.usda import USDAFoodDataSource
 
 
-def test_local_rows_are_explicitly_marked_as_unsourced_reference_data():
+def test_a_converted_dish_comes_back_derived_and_cited():
+    """Phở bò has a recipe, so it resolves from the generated table.
+
+    The `fdcId`s are the point: a derived row can be checked against USDA, which
+    is what takes it out of `is_reference`. What stays editorial is the portions
+    in `recipes.py`, not the nutrition.
+    """
     record = asyncio.run(LocalNutritionSource().lookup("Phở bò"))
+
+    assert record.source == "usda_sr_legacy_recipe"
+    assert record.is_reference is False
+    assert record.source_id.split(",")[0].isdigit()
+
+
+def test_a_dish_still_awaiting_a_recipe_says_so():
+    """Conversion is a dish at a time, so both tables are live at once.
+
+    A row with no recipe yet keeps the old marking rather than borrowing the
+    derived table's credibility.
+    """
+    record = asyncio.run(LocalNutritionSource().lookup("Bánh chưng"))
 
     assert record.source == "local_reference"
     assert record.is_reference is True
@@ -27,7 +46,7 @@ def test_one_source_outage_falls_through_to_the_next_source():
     repository = NutritionRepository([BrokenSource(), LocalNutritionSource()])
     record = asyncio.run(repository.lookup("Phở bò", "Beef pho"))
 
-    assert record.source == "local_reference"
+    assert record.source == "usda_sr_legacy_recipe"
 
 
 def test_usda_uses_an_exact_token_match_and_keeps_provenance():

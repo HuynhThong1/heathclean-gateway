@@ -61,10 +61,30 @@ search result stays unresolved for the user to correct.
 
 **How much any of that resolves is measurable** — `plan.md` §29's
 nutrition-resolution rate needs no photographs, only dish names. See
-[`tools/eval`](tools/eval/README.md); as of 2026-08-14 the local table answers
-**25% of a Vietnamese menu it did not write**, and adding Open Food Facts takes a
-global corpus from 10% to 70% while returning one branded product's figures
-rather than the dish's.
+[`tools/eval`](tools/eval/README.md). Against 153 Vietnamese dish names it did
+not write, `local` answers **29%**, and two thirds of those answers are now
+derived and cited rather than asserted. Adding Open Food Facts takes a global
+corpus from 10% to 67% — while returning one branded product's figures rather
+than the dish's, which is why it sits behind USDA.
+
+### Where a Vietnamese dish's numbers come from
+
+`local` is two tables. [`recipes.py`](app/nutrition/recipes.py) writes a dish as
+a serving in grams over USDA FoodData Central rows (CC0 public domain), and
+`derived_foods.py` is generated from it — so a figure can be checked against
+`https://fdc.nal.usda.gov/food-details/<fdcId>/nutrients` instead of taken on
+trust. `vietnamese_foods.py` is the older hand-written table and still answers
+for dishes no recipe covers yet; those responses keep `nutritionIsReference=true`.
+
+This exists because there is nothing to buy. The **Vietnamese Food Composition
+Table** (Ministry of Health, 2017) is a printed book with no download and no
+stated licence, and USDA — CC0 and bulk-downloadable without a key — contains no
+Vietnamese dishes at all. National tables list *ingredients*; a restaurant dish
+is not an ingredient, so "Bún chả" has to be derived rather than licensed. The
+nutrition is measured and public-domain; what stays editorial is the **portions**,
+and that is what a reader should argue with.
+
+    python tools/nutrition/generate_derived.py <SR Legacy json> --write
 
 ```bash
 curl -X POST http://127.0.0.1:8000/v1/meals/analyze \

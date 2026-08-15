@@ -49,8 +49,15 @@ def test_analyze_returns_items_and_a_total():
         assert item["weight"] > 0
         assert 0.0 <= item["confidence"] <= 1.0
         if item["resolved"]:
-            assert item["nutritionSource"] == "local_reference"
-            assert item["nutritionIsReference"] is True
+            # Either table may answer while the conversion to recipes is only
+            # partly done, and the two are told apart by exactly this pair.
+            assert item["nutritionSource"] in {
+                "usda_sr_legacy_recipe",
+                "local_reference",
+            }
+            assert item["nutritionIsReference"] is (
+                item["nutritionSource"] == "local_reference"
+            )
 
     # The total is the sum of the items, not a separate claim.
     assert body["total"]["calories"] == pytest.approx(
@@ -125,11 +132,13 @@ def test_non_images_and_empty_uploads_are_rejected():
 
 def test_nutrition_scales_with_grams():
     items = resolve([RecognizedFood("Cơm trắng", 200.0, 0.9)])
-    # 130 kcal / 100 g at 200 g
+    # 130 kcal / 100 g at 200 g. Plain rice is the one dish where the derived
+    # figure and the old hand-written one agree exactly, which is a reassuring
+    # place for the scaling test to stand.
     assert items[0].calories == 260
     assert items[0].resolved is True
-    assert items[0].nutrition_source == "local_reference"
-    assert items[0].nutrition_is_reference is True
+    assert items[0].nutrition_source == "usda_sr_legacy_recipe"
+    assert items[0].nutrition_is_reference is False
 
 
 def test_an_unknown_food_keeps_its_weight_and_reports_zero_nutrition():
@@ -143,7 +152,11 @@ def test_totals_ignore_nothing():
     items = resolve(
         [RecognizedFood("Cơm trắng", 100.0, 0.9), RecognizedFood("Phở bò", 100.0, 0.9)]
     )
-    assert total(items).calories == 220
+    # 130 for the rice, 67 for the phở. The phở figure fell from a hand-written
+    # 90 when it was derived: a bowl is 700 g of which 380 g is broth, and a
+    # density that high was describing a drained bowl. The recipe is in
+    # `app/nutrition/recipes.py` and is the thing to argue with.
+    assert total(items).calories == 197
 
 
 # MARK: prompt parsing

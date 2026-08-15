@@ -5,17 +5,21 @@ This one needs only a list of dish names, so it can be run today — and it is t
 one that says whether the nutrition half of the gateway is doing its job.
 
 ```bash
-NUTRITION_SOURCES=local .venv/bin/python -m tools.eval.resolve_coverage
-.venv/bin/python -m tools.eval.resolve_coverage --sources openfoodfacts,local \
-    --corpus global_dishes --limit 20 --concurrency 1
+.venv/bin/python -m tools.eval.resolve_coverage --sources local
+.venv/bin/python -m tools.eval.resolve_coverage --corpus global_dishes \
+    --limit 24 --concurrency 1        # network sources: sample, do not sweep
 ```
+
+It prints which sources actually ran, how many names each answered, how many
+answers came from the unsourced reference rows, and every miss — so the output
+is a worklist rather than a score.
 
 ## The corpora, and why they are name lists
 
 `corpus/vietnamese_dishes.txt` — 153 dishes from Wikipedia's *List of Vietnamese
-dishes* (CC BY-SA 4.0). **Deliberately not derived from
-`app/nutrition/vietnamese_foods.py`**: a table measured against its own contents
-scores 100% and means nothing.
+dishes* (CC BY-SA 4.0). **Deliberately not derived from this repository's own
+tables**: a table measured against its own contents scores 100% and means
+nothing.
 
 `corpus/global_dishes.txt` — the 150 most frequent labels in
 [MM-Food-100K](https://huggingface.co/datasets/Codatta/MM-Food-100K)
@@ -27,82 +31,87 @@ photographs; a list of dish names carries none of that, which keeps every
 dataset licence out of this repository while still giving the measurement
 something honest to run against.
 
-## What it measured, 2026-08-14
+## What it measured
 
-| Corpus | `local` only | with `openfoodfacts` |
-| --- | --- | --- |
-| Vietnamese (153) | **25%** (39) | not run — see below |
-| Global (150) | 10% (15) | **70%** on the first 20 |
+| Corpus | `local`, before recipes | `local`, now | full chain |
+| --- | --- | --- | --- |
+| Vietnamese (153) | 25% — 39, all asserted | **29%** — 45, of which **30 cited** | unchanged |
+| Global (150) | 10% — 15 | 10% | **67%** on the first 24 |
 
-Three things follow.
+**The four points are not the point.** What changed is where the answers come
+from: 30 of the 45 are now computed from a recipe over CC0 USDA rows and carry
+the `fdcId`s they were derived from, against 15 still asserted by the
+hand-written table. Recipes convert rows before they add them, so coverage
+climbs slowly while credibility climbs fast.
 
-**The 88-row table covers a quarter of a real Vietnamese menu.** Not a
-projection — 39 of 153 names it did not write itself. The misses are printed as
-a worklist, and they are not exotic: bún chả, bún thang, cao lầu, bánh bột lọc,
-bánh tráng, cơm hến, xôi gà.
+**Nothing in the chain can raise the Vietnamese figure.** On the global sample
+USDA answered 1 name and Open Food Facts 13; on Vietnamese dishes both answer
+essentially nothing, because phở is neither a USDA ingredient nor a barcoded
+product. Vietnamese coverage moves only by writing more recipes.
 
-**Open Food Facts is worth turning on, and it is free** — it needs only an
-identifying `OPENFOODFACTS_USER_AGENT`, no key. It took the global corpus from
-10% to 70% on the sample.
-
-**But coverage is not correctness, and Open Food Facts is a *packaged product*
-database.** An exact name match returns one specific barcode's figures, not a
-generic average for the dish:
+**Open Food Facts is worth having and costs only a User-Agent** — it took the
+global corpus from 10% to 67%. But coverage is not correctness, and it is a
+database of *packaged products*: an exact name match returns one barcode's
+figures, not the dish's.
 
 | Query | Matched | kcal/100 g |
 | --- | --- | --- |
 | Watermelon | a product named "Watermelon" | 31 — right |
 | Pizza | a product named "Pizza" | 261 — plausible |
 | Fried Rice | a product named "Fried Rice" | 197 — plausible |
-| **Fried Chicken** | a product named "Fried Chicken" | **536** — roughly double a real portion of fried chicken |
+| **Fried Chicken** | a product named "Fried Chicken" | **536** — a snack, not a dish |
 | Apple | — | miss; a raw fruit is not a packaged product |
 
-So adding `openfoodfacts` buys breadth on packaged and branded food and should
-not be read as buying accuracy on cooked dishes. That is a reason to keep USDA
-ahead of it in `NUTRITION_SOURCES`, which the default ordering already does.
+So it buys breadth on branded and packaged food and must stay **behind** USDA in
+`NUTRITION_SOURCES`, which the shipped ordering does.
 
-**And it cannot help Vietnamese food.** Phở and bún chả are cooked dishes, not
-barcoded products; the chain has no source that knows them. Vietnamese coverage
-moves only when a Vietnamese nutrition dataset replaces the reference table —
-the licensed dataset `plan.md` §10 already requires before release.
+## Why the dishes are derived rather than licensed
 
-## What could replace the reference table
+There is nothing to buy, and that is not a licensing problem:
 
-The 25% is the reference table's ceiling, and no source in the chain can raise
-it: Open Food Facts is packaged products and USDA has no Vietnamese dishes. The
-survey behind that is in `tools/nutrition/derive_from_usda.py`; the short of it
-is that **the Vietnamese Food Composition Table is a printed book** (Ministry of
-Health, 2017, print-only per FAO, no licence stated) and **USDA FoodData Central
-is CC0 but contains no dishes** — national tables list *ingredients*, and a
-restaurant dish is not an ingredient. Licensing cannot buy "Bún chả".
+- The **Vietnamese Food Composition Table** (Ministry of Health, 2017) is a
+  302-page printed book — FAO lists it print-only, no download, no stated
+  licence.
+- **USDA FoodData Central** is CC0 and bulk-downloadable without an API key, and
+  contains **no Vietnamese dishes at all**. SR Legacy's 7,793 rows have rice
+  noodles, pork loin, beef round, shrimp and cilantro; nothing called phở, and
+  not even fish sauce under that name.
 
-So a dish figure has to be **derived**: a recipe in grams over CC0 ingredient
-rows, which makes every number traceable to an `fdcId` instead of asserted. The
-spike ran four dishes:
+National tables list *ingredients*. A restaurant dish is not an ingredient, so
+"Bún chả" cannot be licensed — it has to be derived. That is
+[`app/nutrition/recipes.py`](../../app/nutrition/recipes.py): a serving in grams
+over public-domain rows, with `derived_foods.py` generated from it. The
+nutrition is measured; the **portions** are this project's judgement and are the
+part to argue with.
 
-| Dish | Derived | Current table | Δ kcal |
-| --- | --- | --- | --- |
-| Bánh mì thịt | 244 kcal, 13.3 p | 250, 11.0 p | −6 |
-| Gỏi cuốn | 103 kcal, 10.5 p | 95, 6.0 p | +8 |
-| Cơm tấm | 140 kcal, **8.8 p** | 150, **3.0 p** | −10 |
-| Phở bò | 47 kcal, 3.2 p | 90, 6.0 p | −43 |
+### What the first four dishes settled
 
-Three of four land within 10 kcal/100 g, which says the hand-written rows are
-better than "unsourced" makes them sound. Two disagreements are the interesting
-part:
+| Dish | Derived | Old hand-written row |
+| --- | --- | --- |
+| Bánh mì thịt | 244 kcal, 13.3 p | 250, 11.0 p |
+| Gỏi cuốn | 103 kcal, 10.5 p | 95, 6.0 p |
+| Cơm tấm | 140 kcal, **9.4 p** | 150, **3.0 p** |
+| Phở bò | 67 kcal | 90 |
 
-- **Cơm tấm's 3.0 g protein per 100 g is the row's own error.** That is plain
-  rice's protein (cơm trắng is 2.7). The dish is a rice plate *with a grilled
-  pork chop*, and the app asks the model for grams of the whole plate — so the
-  row under-reports protein by roughly a third of the dish. Cơm gà, right next
-  to it, does include its chicken.
-- **Phở's −43 is the spike's error, not the table's.** The recipe models 400 g of
-  broth as plain water; real bone broth is not water. Broth is the least certain
-  number in any Vietnamese recipe and it dominates a bowl.
+Three land within 10 kcal/100 g of the hand-written row, which says those rows
+were better than "unsourced" makes them sound. The two disagreements are the
+useful part:
+
+- **Cơm tấm's 3.0 g protein was the row's own error.** That is plain rice's
+  protein (cơm trắng is 2.7). The dish is a rice plate *with a grilled pork
+  chop*, and the app asks the model for grams of the whole plate — so the row
+  under-reported protein by about a third of the dish. Cơm gà, right beside it,
+  did include its chicken.
+- **Phở's gap was the recipe's, twice over.** Modelling broth as plain water put
+  it at 47; `Soup, stock, chicken, home-prepared` (36 kcal/100 g) is the closest
+  public-domain row to a simmered bone broth and brings it to 67. It stays below
+  90 because a 700 g bowl that is more than half broth is not a 90 kcal/100 g
+  food — that figure was describing a drained bowl. Broth is the least certain
+  number in any of these recipes and it dominates every soup.
 
 ## Rerunning it
 
-The numbers above are a snapshot, not a fixture. `local` is deterministic and
-cheap. Open Food Facts rate-limits *search* to roughly ten requests a minute, so
-use `--limit` and `--concurrency 1` against it; a full corpus run is both slow
-and rude. USDA needs `USDA_API_KEY` and has not been measured here at all.
+These are snapshots, not fixtures. `local` is deterministic and costs nothing.
+Open Food Facts rate-limits *search* to roughly ten requests a minute, so use
+`--limit` and `--concurrency 1` against it — a full corpus sweep is both slow and
+rude. USDA needs `USDA_API_KEY`.
