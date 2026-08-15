@@ -116,6 +116,19 @@ BEEF_CHUCK = 168667  # Beef, chuck, arm pot roast, lean and fat, braised
 COCONUT_MILK = 170173  # Nuts, coconut milk, canned
 TAPIOCA = 169717  # Tapioca, pearl, dry
 BAMBOO = 169212  # Bamboo shoots, canned, drained solids
+RICE_DRY = 168877  # Rice, white, long-grain, regular, raw, enriched
+CATFISH = 173714  # Fish, catfish, channel, wild, cooked, dry heat
+PORK_LIVER = 167863  # Pork, variety meats, liver, cooked, braised
+CHITTERLINGS = 167856  # Pork, variety meats, chitterlings, cooked, simmered
+FRIED_TOFU = 172451  # Tofu, fried
+EGGPLANT = 169228  # Eggplant, raw
+EGG_RAW = 171287  # Egg, whole, raw, fresh
+WHOLE_MILK = 171265  # Milk, whole, 3.25% milkfat, with added vitamin D
+CONDENSED_MILK = 171275  # Milk, canned, condensed, sweetened
+YOGURT = 171284  # Yogurt, plain, whole milk
+SOYMILK = 175215  # Soymilk (all flavors), unsweetened, with added calcium
+COFFEE = 171890  # Beverages, coffee, brewed, prepared with tap water
+CANE_SYRUP = 167743  # Syrup, cane
 
 
 RECIPES: List[Recipe] = [
@@ -662,5 +675,238 @@ RECIPES: List[Recipe] = [
             Ingredient(BASIL, 10),
         ],
         ["gỏi tôm", "nộm"],
+    ),
+    # ---- Retiring the last of the asserted rows. Everything below was answered
+    # by `vietnamese_foods.py` alone until now, which is the figure `plan.md` §10
+    # is actually about: not how much resolves, but how much of what resolves is
+    # sourced. The old asserted value is quoted beside each so the two can be
+    # compared rather than silently swapped.
+    Recipe(
+        "Bánh canh",
+        "Thick noodle soup",
+        [
+            Ingredient(TAPIOCA, 60, "the noodles are tapioca starch, not rice"),
+            Ingredient(WATER, 120, "taken up in boiling"),
+            Ingredient(PORK_RIBS, 45),
+            Ingredient(SHRIMP, 20),
+            Ingredient(STOCK, 330),
+            Ingredient(SCALLION, 10),
+            Ingredient(FISH_SAUCE, 6),
+        ],
+        ["banh canh", "bánh canh cua", "bánh canh giò heo"],
+        note="A thicker, chewier noodle than phở's and a shorter bowl, so it "
+        "lands above the rice-noodle soups rather than beside them. Asserted 100.",
+    ),
+    Recipe(
+        "Bún cá",
+        "Fish noodle soup",
+        [
+            Ingredient(RICE_NOODLES, 180),
+            Ingredient(CATFISH, 60, "fried before it goes in"),
+            Ingredient(OIL, 5, "absorbed frying the fish"),
+            Ingredient(STOCK, 350),
+            Ingredient(TOMATO, 30),
+            Ingredient(SCALLION, 10),
+            Ingredient(FISH_SAUCE, 6),
+        ],
+        ["bun ca", "bún cá rô"],
+        note="Catfish stands in for the freshwater fish actually used (cá rô, "
+        "cá lóc), which USDA does not carry. Asserted 90.",
+    ),
+    Recipe(
+        "Bún đậu mắm tôm",
+        "Rice noodles with fried tofu",
+        [
+            Ingredient(RICE_NOODLES, 150),
+            Ingredient(FRIED_TOFU, 80),
+            Ingredient(PORK_BELLY, 45, "raw weight; boiled and sliced"),
+            Ingredient(CUCUMBER, 30),
+            Ingredient(BASIL, 15),
+            Ingredient(FISH_SAUCE, 10, "standing in for mắm tôm"),
+        ],
+        ["bun dau mam tom", "bún đậu"],
+        note="A plate, not a bowl — no broth, which is why it is roughly twice "
+        "the density of the soups. Fish sauce stands in for shrimp paste: both "
+        "are salt and a little protein at this scale, and USDA has no mắm tôm. "
+        "Asserted 170.",
+    ),
+    Recipe(
+        "Bún mắm",
+        "Fermented fish noodle soup",
+        [
+            Ingredient(RICE_NOODLES, 180),
+            Ingredient(STOCK, 330),
+            Ingredient(SHRIMP, 25),
+            Ingredient(PORK_BELLY, 25, "raw weight"),
+            Ingredient(EGGPLANT, 40),
+            Ingredient(SCALLION, 10),
+            Ingredient(FISH_SAUCE, 12, "standing in for mắm cá linh"),
+        ],
+        ["bun mam"],
+        note="Asserted 100.",
+    ),
+    Recipe(
+        "Cháo lòng",
+        "Offal rice porridge",
+        [
+            Ingredient(RICE_DRY, 45, "cooked down in the recipe, not before it"),
+            Ingredient(WATER, 280, "a porridge is mostly this"),
+            Ingredient(CHITTERLINGS, 40),
+            Ingredient(PORK_LIVER, 30),
+            Ingredient(SCALLION, 10),
+            Ingredient(FISH_SAUCE, 5),
+        ],
+        ["chao long", "cháo"],
+        note="Rule 2 from the module docstring again: the rice is cooked inside "
+        "the recipe, because a porridge's water is the dish. Comes out near 75 "
+        "against an asserted 90 — the asserted figure looks like a bowl of "
+        "congee thicker than the one most shops serve.",
+    ),
+    Recipe(
+        "Lẩu",
+        "Hotpot",
+        [
+            Ingredient(STOCK, 400),
+            Ingredient(BEEF_ROUND, 40),
+            Ingredient(SHRIMP, 40),
+            Ingredient(TOFU, 40),
+            Ingredient(MUSHROOM, 40),
+            Ingredient(LETTUCE, 50, "standing in for the leafy greens"),
+            Ingredient(RICE_NOODLES, 60),
+            Ingredient(FISH_SAUCE, 8),
+        ],
+        ["lau", "lẩu thái", "lẩu bò"],
+        note="**A category, not a dish**, and the widest one in this file: what "
+        "is in the pot varies more than any recipe here can express, and a "
+        "diner eats a share of it rather than a serving. This is a mixed pot at "
+        "one person's share, which is the most honest thing a single row can "
+        "be — and it is the row most worth correcting by hand. Asserted 80.",
+    ),
+    # ---- Sticky rice cakes. Dense, and the two differ only in shape and a
+    # little pork, so they are written as the same cake twice rather than one
+    # aliased to the other — a reader comparing them should see both.
+    Recipe(
+        "Bánh chưng",
+        "Square sticky rice cake",
+        [
+            Ingredient(GLUTINOUS_RICE_DRY, 100),
+            Ingredient(WATER, 90, "taken up steaming"),
+            Ingredient(MUNG_BEANS, 45),
+            Ingredient(PORK_BELLY, 35, "raw weight; renders into the rice"),
+        ],
+        ["banh chung"],
+        note="Asserted 220.",
+    ),
+    Recipe(
+        "Bánh tét",
+        "Cylindrical sticky rice cake",
+        [
+            Ingredient(GLUTINOUS_RICE_DRY, 100),
+            Ingredient(WATER, 95),
+            Ingredient(MUNG_BEANS, 45),
+            Ingredient(PORK_BELLY, 30, "raw weight"),
+        ],
+        ["banh tet"],
+        note="Asserted 210.",
+    ),
+    Recipe(
+        "Bánh giò",
+        "Pyramid rice dumpling",
+        [
+            Ingredient(RICE_FLOUR, 55),
+            Ingredient(TAPIOCA, 10, "for the soft, translucent dough"),
+            Ingredient(WATER, 90),
+            Ingredient(PORK_GROUND, 35),
+            Ingredient(MUSHROOM, 20, "wood ear, standing in"),
+            Ingredient(OIL, 3),
+            Ingredient(SCALLION, 5),
+        ],
+        ["banh gio"],
+        note="Asserted 160.",
+    ),
+    # ---- Sweets and drinks. The reference table's last holdings, and the place
+    # where "per 100 g of the dish as served" needs saying out loud: a drink is
+    # weighed as the liquid, never with its ice.
+    Recipe(
+        "Bánh flan",
+        "Crème caramel",
+        [
+            Ingredient(EGG_RAW, 55, "one egg"),
+            Ingredient(WHOLE_MILK, 90),
+            Ingredient(CONDENSED_MILK, 35),
+            Ingredient(SUGAR, 12, "the caramel"),
+        ],
+        ["banh flan", "kem flan", "caramen"],
+        note="Asserted 145.",
+    ),
+    Recipe(
+        "Chè",
+        "Sweet dessert soup",
+        [
+            Ingredient(MUNG_BEANS, 60),
+            Ingredient(TAPIOCA, 15),
+            Ingredient(SUGAR, 20),
+            Ingredient(COCONUT_MILK, 30),
+            Ingredient(WATER, 120),
+        ],
+        ["che", "chè đậu xanh", "chè thập cẩm"],
+        note="**A category**, like lẩu: chè names a hundred desserts sharing "
+        "only sugar and a liquid. Written as a mung bean chè with coconut milk, "
+        "the most common shape. Comes out near 105 against an asserted 150, and "
+        "the gap is real rather than an error — a chè with more syrup or "
+        "condensed milk is heavier than this one.",
+    ),
+    Recipe(
+        "Sữa chua",
+        "Vietnamese yoghurt",
+        [
+            Ingredient(YOGURT, 90),
+            Ingredient(CONDENSED_MILK, 12),
+        ],
+        ["sua chua", "da ua", "yaourt"],
+        note="Set with condensed milk rather than merely sweetened with it, "
+        "which is what makes Vietnamese yoghurt denser than the plain row it is "
+        "built from. Asserted 80.",
+    ),
+    Recipe(
+        "Nước mía",
+        "Sugarcane juice",
+        [
+            Ingredient(CANE_SYRUP, 21),
+            Ingredient(WATER, 79, "juice is dilute syrup, not the other way round"),
+            Ingredient(LIME_JUICE, 3, "the kumquat it is pressed with"),
+        ],
+        ["nuoc mia"],
+        note="USDA has no sugarcane juice, only cane syrup — which is the same "
+        "plant with the water boiled off. Diluting it back to about 15 g of "
+        "sugar per 100 g puts it at cane juice's usual 14–18 °Brix. That "
+        "dilution is the editorial judgement here; the sugar itself is measured. "
+        "Asserted 60.",
+    ),
+    Recipe(
+        "Sữa đậu nành",
+        "Soy milk",
+        [
+            Ingredient(SOYMILK, 200),
+            Ingredient(SUGAR, 10),
+        ],
+        ["sua dau nanh"],
+        note="Built from the *unsweetened* row plus the sugar a Vietnamese "
+        "street glass actually carries, rather than from a pre-sweetened row "
+        "whose sugar is somebody else's. Asserted 45.",
+    ),
+    Recipe(
+        "Cà phê sữa đá",
+        "Iced coffee with condensed milk",
+        [
+            Ingredient(COFFEE, 70, "phin-brewed, so strong and short"),
+            Ingredient(CONDENSED_MILK, 28),
+        ],
+        ["ca phe sua da", "cà phê sữa", "bạc xỉu"],
+        note="**The ice is deliberately not in the serving.** It melts into the "
+        "same glass, so counting it would make the drink look weaker the longer "
+        "it sits, and the density would depend on when it was weighed. The user "
+        "is asked for grams of the drink. Comes out near 90 against an asserted "
+        "80, which is what the ice was quietly doing to that figure.",
     ),
 ]

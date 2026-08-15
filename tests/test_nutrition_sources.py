@@ -27,13 +27,34 @@ def test_a_converted_dish_comes_back_derived_and_cited():
     assert record.source_id.split(",")[0].isdigit()
 
 
+def an_unconverted_dish() -> str:
+    """A reference row with no recipe yet — whichever one that is today.
+
+    Found rather than hardcoded because the two tests using it pinned "Bánh
+    chưng", and writing a recipe for it turned them both red. That is the wrong
+    failure: a test for "unconverted rows are still marked unconverted" should
+    not break *because* a row was converted, which is the work going right. It
+    breaks when the table empties, and then both tests go with it.
+    """
+    from app.nutrition.derived_foods import lookup as derived_lookup
+    from app.nutrition.vietnamese_foods import FOODS
+
+    for entry in FOODS:
+        if derived_lookup(entry.name) is None:
+            return entry.name
+    raise AssertionError(
+        "every reference row now has a recipe — plan.md §10 is met, so "
+        "vietnamese_foods.py and these two tests can go"
+    )
+
+
 def test_a_dish_still_awaiting_a_recipe_says_so():
     """Conversion is a dish at a time, so both tables are live at once.
 
     A row with no recipe yet keeps the old marking rather than borrowing the
     derived table's credibility.
     """
-    record = asyncio.run(LocalNutritionSource().lookup("Bánh chưng"))
+    record = asyncio.run(LocalNutritionSource().lookup(an_unconverted_dish()))
 
     assert record.source == "local_reference"
     assert record.is_reference is True
@@ -179,4 +200,4 @@ def test_a_recipe_outranks_a_barcode_that_merely_shares_the_name():
 def test_reference_rows_sit_last_so_measured_data_can_win():
     """`reference` on its own answers only what no recipe covers."""
     assert asyncio.run(ReferenceNutritionSource().lookup("Phở bò")) is not None
-    assert asyncio.run(DerivedNutritionSource().lookup("Bánh chưng")) is None
+    assert asyncio.run(DerivedNutritionSource().lookup(an_unconverted_dish())) is None

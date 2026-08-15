@@ -81,7 +81,7 @@ async def resolve_all(names: List[str], concurrency: int) -> List[Tuple[str, obj
 def report(corpus: str, results: List[Tuple[str, object]]) -> None:
     total = len(results)
     by_source: Counter = Counter()
-    reference_only = 0
+    reference_backed = []
     misses = []
 
     for name, record in results:
@@ -90,17 +90,25 @@ def report(corpus: str, results: List[Tuple[str, object]]) -> None:
             continue
         by_source[record.source] += 1
         if getattr(record, "is_reference", False):
-            reference_only += 1
+            reference_backed.append(name)
 
     resolved = total - len(misses)
     print(f"\n=== {corpus}: {resolved}/{total} resolved ({resolved / total:.0%})")
     for source, count in by_source.most_common():
         print(f"    {source:<18} {count:>4}  ({count / total:.0%})")
-    if reference_only:
+    if reference_backed:
         print(
-            f"    of which unsourced reference rows: {reference_only} "
-            f"({reference_only / total:.0%} of the corpus)"
+            f"    of which unsourced reference rows: {len(reference_backed)} "
+            f"({len(reference_backed) / total:.0%} of the corpus)"
         )
+    # Named, not just counted. These are the dishes the app answers today on the
+    # strength of the hand-written table alone, so they are what has to become a
+    # recipe before release — a different worklist from the misses, and a
+    # shorter one. A count told you how much was left and not what.
+    if reference_backed:
+        print(f"\n  {len(reference_backed)} answered only by unsourced rows:")
+        for name in reference_backed:
+            print(f"    {name}")
     print(f"\n  {len(misses)} unresolved:")
     for name in misses:
         print(f"    {name}")

@@ -33,16 +33,26 @@ something honest to run against.
 
 ## What it measured
 
-| Corpus | `local`, before recipes | `local`, now | full chain |
-| --- | --- | --- | --- |
-| Vietnamese (153) | 25% — 39, all asserted | **29%** — 45, of which **30 cited** | unchanged |
-| Global (150) | 10% — 15 | 10% | **67%** on the first 24 |
+| Corpus | before recipes | after the first recipes | now | full chain |
+| --- | --- | --- | --- | --- |
+| Vietnamese (153) | 25% — 39, all asserted | 29% — 45, of which 30 cited | **29% — all 45 cited** | unchanged |
+| Global (150) | 10% — 15 | 10% | 11% — 17, of which **11 asserted** | **67%** on the first 24 |
 
-**The four points are not the point.** What changed is where the answers come
-from: 30 of the 45 are now computed from a recipe over CC0 USDA rows and carry
-the `fdcId`s they were derived from, against 15 still asserted by the
-hand-written table. Recipes convert rows before they add them, so coverage
-climbs slowly while credibility climbs fast.
+**Coverage did not move, and that is still not the point.** The Vietnamese
+column went from 30 of 45 answers cited to 45 of 45: every dish the offline
+chain can name is now computed from a recipe over CC0 USDA rows and carries the
+`fdcId`s it was derived from. §10 asks for the *asserted* rows to go, not for
+the percentage to climb, and for this corpus they are gone.
+
+The 11 left on the global corpus are the same job in a different shape. They are
+mostly whole foods — Apple, Banana, Mango, Boiled Egg — which USDA carries
+directly, so each needs a row mapped rather than a dish derived. `Dragon Fruit`
+is the one that will not go that way: SR Legacy does not have it.
+
+**A citation is not a portion.** `Lẩu` and `Chè` now cite USDA for every gram in
+them and are still the two least trustworthy rows in the file, because each
+names a family rather than a dish. What a derived row fixes is where the
+nutrition came from; how much of it you were served stays editorial.
 
 **Nothing in the chain can raise the Vietnamese figure.** On the global sample
 USDA answered 1 name and Open Food Facts 13; on Vietnamese dishes both answer
