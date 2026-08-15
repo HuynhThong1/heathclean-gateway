@@ -602,6 +602,52 @@ RECIPES: List[Recipe] = [
         ],
         ["chả cá Lã Vọng"],
     ),
+    # ---- Dumplings. A whole family the tables had nothing for: a real scan of
+    # sủi cảo came back unresolved at 95% confidence, which is the branch working
+    # as designed and also a gap worth closing.
+    Recipe(
+        "Sủi cảo",
+        "Dumpling soup",
+        [
+            Ingredient(WHEAT_FLOUR, 45, "wrappers"),
+            Ingredient(WATER, 30, "taken up in the dough"),
+            Ingredient(PORK_GROUND, 45),
+            Ingredient(SHRIMP, 20),
+            Ingredient(SCALLION, 10),
+            Ingredient(STOCK, 250),
+        ],
+        ["sui cao", "há cảo", "ha cao"],
+        note="Served in broth, which is why it is not as dense as a fried "
+        "dumpling. `há cảo` is aliased here rather than given its own row: it is "
+        "steamed and shrimp-heavy, close enough at this precision.",
+    ),
+    Recipe(
+        "Hoành thánh",
+        "Wonton soup",
+        [
+            Ingredient(WHEAT_FLOUR, 30, "thinner wrappers than sủi cảo"),
+            Ingredient(WATER, 20),
+            Ingredient(PORK_GROUND, 30),
+            Ingredient(SHRIMP, 12),
+            Ingredient(SCALLION, 10),
+            Ingredient(STOCK, 300),
+        ],
+        ["hoanh thanh", "vằn thắn"],
+    ),
+    Recipe(
+        "Mì vằn thắn",
+        "Wonton egg noodle soup",
+        [
+            Ingredient(EGG_NOODLES, 120),
+            Ingredient(WHEAT_FLOUR, 25, "wrappers"),
+            Ingredient(WATER, 18),
+            Ingredient(PORK_GROUND, 25),
+            Ingredient(SHRIMP, 10),
+            Ingredient(STOCK, 280),
+            Ingredient(SCALLION, 10),
+        ],
+        ["mi van than", "mì hoành thánh"],
+    ),
     Recipe(
         "Gỏi",
         "Vietnamese salad",
