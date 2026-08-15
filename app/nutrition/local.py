@@ -74,7 +74,46 @@ def local_record(name: str, name_en: Optional[str] = None) -> Optional[Nutrition
     return None
 
 
+class DerivedNutritionSource(NutritionSource):
+    """Dishes with a recipe, computed from CC0 USDA rows.
+
+    **Its own source so it can be ordered first**, which is the whole point.
+    Under `usda,openfoodfacts,local` a deployed gateway resolved a 400 g bowl of
+    phở to a packet of Shan Noodle instant soup — a real Open Food Facts product
+    literally named "Beef Pho" at 367 kcal/100 g — and reported 1,467 kcal,
+    because Open Food Facts was asked before the recipe was. For a dish the app
+    has a recipe for, no barcode is a better answer than the recipe.
+    """
+
+    name = "derived"
+
+    async def lookup(self, query: str) -> Optional[NutritionRecord]:
+        return _derived_record(query)
+
+
+class ReferenceNutritionSource(NutritionSource):
+    """The hand-written rows that no recipe covers yet.
+
+    Belongs **last**: its figures are asserted, so anything measured — USDA, or
+    a packaged product that really is the food — should be preferred.
+    """
+
+    name = "reference"
+
+    async def lookup(self, query: str) -> Optional[NutritionRecord]:
+        return _reference_record(query)
+
+
 class LocalNutritionSource(NutritionSource):
+    """Both tables at one position in the chain, derived first.
+
+    Kept because it is what existing configurations name, and because it is the
+    right thing for a localhost gateway with no keys. A deployment that also
+    uses USDA or Open Food Facts wants `derived,…,reference` instead, so that
+    the asserted rows do not outrank measured ones and measured ones do not
+    outrank a recipe.
+    """
+
     name = "local"
 
     async def lookup(self, query: str) -> Optional[NutritionRecord]:

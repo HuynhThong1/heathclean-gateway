@@ -5,7 +5,11 @@ import os
 from typing import Dict, List, Optional, Sequence
 
 from .base import NutritionRecord, NutritionSource, NutritionSourceError
-from .local import LocalNutritionSource
+from .local import (
+    DerivedNutritionSource,
+    LocalNutritionSource,
+    ReferenceNutritionSource,
+)
 from .open_food_facts import OpenFoodFactsSource
 from .usda import USDAFoodDataSource
 
@@ -43,6 +47,11 @@ class NutritionRepository:
 
 def build_repository() -> NutritionRepository:
     available = {
+        # `derived` and `reference` are the two halves of `local`, separable so
+        # they can sit on either side of the network sources: a recipe should
+        # beat a barcode, and an asserted row should not.
+        "derived": DerivedNutritionSource(),
+        "reference": ReferenceNutritionSource(),
         "local": LocalNutritionSource(),
         "usda": USDAFoodDataSource(),
         "openfoodfacts": OpenFoodFactsSource(),

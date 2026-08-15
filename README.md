@@ -15,7 +15,7 @@ sees — only which foods get named.
 photo ──> provider (Qwen / Gemini / mock) ──> [{name, grams, confidence}]
                                                       │
                               ordered nutrition sources
-                                  (USDA / OFF / local)
+                       (recipe / USDA / OFF / reference)
                                                       │
                                     [{name, grams, kcal, p/c/f}] + total
 ```
@@ -47,7 +47,7 @@ Copy `.env.example` as a starting point. Nutrition sources are opt-in and
 ordered; the first exact name match wins:
 
 ```bash
-NUTRITION_SOURCES=usda,openfoodfacts,local
+NUTRITION_SOURCES=derived,usda,openfoodfacts,reference
 USDA_API_KEY=…
 OPENFOODFACTS_USER_AGENT=HeathFirst/0.1 (team@example.com)
 ```
@@ -65,7 +65,13 @@ nutrition-resolution rate needs no photographs, only dish names. See
 not write, `local` answers **29%**, and two thirds of those answers are now
 derived and cited rather than asserted. Adding Open Food Facts takes a global
 corpus from 10% to 67% — while returning one branded product's figures rather
-than the dish's, which is why it sits behind USDA.
+than the dish's, which is why it sits behind USDA — and behind `derived`.
+
+**The order is load-bearing.** With Open Food Facts ahead of the local tables, a
+deployed gateway resolved a 400 g bowl of phở to a packet of Shan Noodle instant
+soup — a real product named "Beef Pho" at 367 kcal/100 g — and reported **1,467
+kcal** instead of 268. `derived` and `reference` are separate sources so a recipe
+can be asked first and an asserted row last.
 
 ### Where a Vietnamese dish's numbers come from
 

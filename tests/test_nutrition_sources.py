@@ -2,8 +2,12 @@ import asyncio
 
 import httpx
 
-from app.nutrition.base import NutritionSource, NutritionSourceError
-from app.nutrition.local import LocalNutritionSource
+from app.nutrition.base import NutritionRecord, NutritionSource, NutritionSourceError
+from app.nutrition.local import (
+    DerivedNutritionSource,
+    LocalNutritionSource,
+    ReferenceNutritionSource,
+)
 from app.nutrition.open_food_facts import OpenFoodFactsSource
 from app.nutrition.repository import NutritionRepository
 from app.nutrition.usda import USDAFoodDataSource
@@ -139,3 +143,40 @@ def test_open_food_facts_reads_only_normalized_per_100g_values():
     assert record.source_id == "3017620422003"
     assert record.calories_per_100g == 539
     assert record.is_reference is False
+
+
+def test_a_recipe_outranks_a_barcode_that_merely_shares_the_name():
+    """The ordering bug that reached a deployed gateway.
+
+    Open Food Facts has a product literally named "Beef Pho" — a packet of Shan
+    Noodle instant soup at 367 kcal/100 g. Asked before the recipe, it turned a
+    400 g bowl of phở into 1,467 kcal. `derived` exists so it can be ordered in
+    front of every network source.
+    """
+
+    class PackagedNoodles(NutritionSource):
+        name = "openfoodfacts"
+
+        async def lookup(self, query):
+            return NutritionRecord(
+                name="Beef Pho",
+                name_en="Beef Pho",
+                calories_per_100g=367.0,
+                protein_per_100g=5.0,
+                carbs_per_100g=75.0,
+                fat_per_100g=5.8,
+                source="open_food_facts",
+                source_id="0815055010023",
+            )
+
+    repository = NutritionRepository([DerivedNutritionSource(), PackagedNoodles()])
+    record = asyncio.run(repository.lookup("Phở bò", "Beef pho"))
+
+    assert record.source == "usda_sr_legacy_recipe"
+    assert record.calories_per_100g < 120, "a bowl of phở is mostly broth"
+
+
+def test_reference_rows_sit_last_so_measured_data_can_win():
+    """`reference` on its own answers only what no recipe covers."""
+    assert asyncio.run(ReferenceNutritionSource().lookup("Phở bò")) is not None
+    assert asyncio.run(DerivedNutritionSource().lookup("Bánh chưng")) is None
