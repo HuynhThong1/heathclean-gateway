@@ -296,6 +296,39 @@ that happens, suspect the granularity of the names before anything else — and
 if the name looks *right*, check whether it is a combination the table has only
 the halves of.
 
+### A wrong number is worse than no number
+
+The failures above all end at 0 kcal, which is visible. This one did not.
+
+A bowl of **mì cay** came back at **3.000 kcal**. The model named it in English —
+`Spicy Noodle Soup` — which exactly matched a *packaged product* of that name in
+Open Food Facts, barcode `0193937000288`, at 461 kcal/100 g. That is the density
+of the **dry packet**. The 650 g the model estimated is the **cooked bowl**, most
+of which is broth. Multiply one by the other and the client is shown a figure
+four times too large with nothing to suggest it is wrong.
+
+The mismatch is of **units, not of names**: a barcode's per-100 g is "as sold",
+and a dish needs "as served". Nothing in the data says which products are sold
+dry, so three things now stand between that and the client:
+
+1. **A ceiling on a single item** (`resolver.IMPLAUSIBLE_ITEM_CALORIES`, 1.200
+   kcal). Over it, the item falls back to *unresolved* and the user types the
+   figure. Grounded in this project's own table: the heaviest serving it derives
+   is Cơm sườn at 699 kcal. The check is on the **total, not the density** —
+   a 100 g bag of crisps at 530 kcal/100 g is correct, and packaged food is the
+   one thing Open Food Facts is actually for.
+2. **A startup warning** when `NUTRITION_SOURCES` puts a network source ahead of
+   the recipes. This had already happened once — a bowl of phở against a
+   packaged "Beef Pho" at 367 kcal/100 g, reported as 1.467 kcal — and
+   `.env.example` was fixed then. **The deployed `.env` never was.** A comment in
+   a file nobody reruns did not prevent the second incident; a warning against
+   the configuration actually in force might.
+3. **A recipe for Mì cay**, so the dish resolves on its own name rather than
+   falling through to a barcode at all.
+
+The prompt now also insists that `name` carries the Vietnamese name, since it
+was an English one that reached Open Food Facts in the first place.
+
 **`qwen` has never been run.** No endpoint was available, so its request shape
 follows the published OpenAI-compatible contract but is unproven.
 

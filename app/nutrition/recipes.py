@@ -224,6 +224,31 @@ RECIPES: List[Recipe] = [
         "dressed noodle than to phở, which is why it is denser than the soups.",
     ),
     Recipe(
+        "Mì cay",
+        "Korean-style spicy noodle soup",
+        [
+            Ingredient(EGG_NOODLES, 180, "ramen-style wheat noodles, cooked"),
+            Ingredient(STOCK, 300, "spicy broth — a clay pot is mostly liquid"),
+            Ingredient(PORK_LOIN, 60, "sliced"),
+            # Fish cake has no USDA row. Built from what it is: white fish
+            # paste, starch and the oil it is fried in.
+            Ingredient(TILAPIA, 30, "fish cake"),
+            Ingredient(WHEAT_FLOUR, 12, "fish cake starch"),
+            Ingredient(MUSHROOM, 30, "enoki"),
+            Ingredient(PAK_CHOI, 45, "standing in for the broccoli and cabbage"),
+            Ingredient(OIL, 12, "chilli oil — it is what makes the broth orange"),
+            Ingredient(SUGAR, 4),
+        ],
+        ["mi cay", "mi cay han quoc"],
+        note="A bowl is mostly broth, which is the whole reason it is worth "
+        "having a row: without one the name fell through to Open Food Facts, "
+        "matched a packaged 'Spicy Noodle Soup' at 461 kcal/100 g — the density "
+        "of the dry packet — and 650 g of cooked bowl came back as 3.000 kcal. "
+        "The generic English name is deliberately NOT an alias here: a tom yum "
+        "is also a spicy noodle soup, and claiming the phrase would be the same "
+        "over-reach as aliasing a combination onto one of its halves.",
+    ),
+    Recipe(
         "Cháo gà",
         "Chicken rice porridge",
         [

@@ -105,6 +105,17 @@ DERIVED: List[DerivedFood] = [
         [],
     ),
     DerivedFood(
+        "Mì cay",
+        "Korean-style spicy noodle soup",
+        104,
+        6.5,
+        10.5,
+        3.9,
+        (169732, 172884, 168232, 175177, 168894, 169251, 168517, 171411, 169655,),
+        673,
+        ["mi cay", "mi cay han quoc"],
+    ),
+    DerivedFood(
         "Cháo gà",
         "Chicken rice porridge",
         66,

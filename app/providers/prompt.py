@@ -30,8 +30,10 @@ beef plus herbs. A cơm tấm plate is SEVERAL items — "Cơm tấm", "Sườn 
 Use the dish's common base name and leave preparation variants out of it:
 "Phở bò", not "Phở bò tái chín"; "Cơm gà", not "Cơm gà xối mỡ".
 
-Vietnamese dishes should be named in Vietnamese, with an English name
-alongside.
+"name" MUST be the Vietnamese name when the dish has one — "Mì cay", not
+"Spicy Noodle Soup". Put the English in "nameEn". A Vietnamese dish returned
+under an English name does not resolve, and a generic English name can match an
+unrelated packaged product.
 
 Estimate the portion size of each dish in grams when reasonably possible.
 
