@@ -14,10 +14,16 @@ from typing import List, Optional
 from fastapi import Depends, FastAPI, File, Header, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
+from .logging_config import configure_logging
 from .nutrition.repository import build_repository
 from .nutrition.resolver import resolve_with_repository, total
 from .providers import registry
 from .providers.base import ProviderError
+
+# Before anything logs. Uvicorn installs its own configuration while building
+# its Config and imports this module afterwards, so this replaces it — see
+# `configure_logging`.
+configure_logging()
 
 MAX_IMAGE_BYTES = int(os.getenv("MAX_IMAGE_BYTES", str(8 * 1024 * 1024)))
 ALLOWED_MIME = {"image/jpeg", "image/png", "image/heic", "image/heif", "image/webp"}

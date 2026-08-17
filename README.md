@@ -43,6 +43,29 @@ GEMINI_MODEL=gemini-3.6-flash
 Changing `.env` needs a **restart**: `--reload` watches code, not the
 environment, and providers have already read it by then.
 
+### Logs
+
+Every line is stamped in **UTC+7 with the offset printed**, and coloured by
+severity — `app/logging_config.py`. Uvicorn's own format has no timestamp at
+all, which leaves a log unable to answer the first question anyone asks of one;
+and the container clock runs on UTC, so a bare time would be seven hours out in
+the direction that still looks plausible.
+
+```
+2026-08-17 11:34:47 +0700 INFO:     10.0.0.4:41124 - "POST /v1/meals/analyze HTTP/1.1" 200 OK
+2026-08-17 11:34:47 +0700 INFO:     10.0.0.4:41125 - "POST /v1/meals/analyze HTTP/1.1" 401 Unauthorized
+```
+
+| Variable | Default | |
+| --- | --- | --- |
+| `LOG_UTC_OFFSET_HOURS` | `7` | A fixed offset, not a tz name — Vietnam has had no DST since 1975, and a slim image may carry no tz database. |
+| `LOG_COLORS` | `auto` | `auto` means "is stderr a terminal", which inside a container is always **no**. `docker-compose.yml` sets `1`. `NO_COLOR` overrides everything. |
+| `LOG_HEALTHZ` | unset | The healthcheck's **successful** requests are dropped: every 30s is ~2.900 lines a day, and they bury real traffic. A *failing* healthcheck always logs. Set `1` to see them all. |
+| `LOG_LEVEL` | `INFO` | For the gateway's own `app.*` loggers. |
+
+Piping to a file or a log shipper? Set `LOG_COLORS=0`, or the stored bytes carry
+ANSI escapes.
+
 Copy `.env.example` as a starting point. Nutrition sources are opt-in and
 ordered; the first exact name match wins:
 

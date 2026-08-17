@@ -21,6 +21,13 @@ services:
       # actually set and fails the deploy loudly if it is not. An exposed port
       # with no key is a hosted-model bill anyone can run up.
       GATEWAY_API_KEY: ${GATEWAY_API_KEY:?set GATEWAY_API_KEY in .env before deploying}
+      # Colour has to be asked for here. A container's stdout is a pipe, so the
+      # formatter's own auto-detection correctly answers "not a terminal" even
+      # when the person running `docker compose logs -f` is sitting at one.
+      LOG_COLORS: "1"
+      # Timestamps are printed in UTC+7 with the offset shown. The container
+      # clock stays on UTC; only the log format shifts.
+      LOG_UTC_OFFSET_HOURS: "7"
     healthcheck:
       # urllib rather than curl: the slim image has no curl, and adding one for
       # a healthcheck is a whole package for a single GET.
