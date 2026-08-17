@@ -274,8 +274,27 @@ Getting there took two fixes, and both were to the *prompt* rather than the code
    `lookup` is exact-match by design and menu names carry preparation variants.
    The prompt now asks for the base dish name.
 
+The third one could **not** be fixed in the prompt, and it is the interesting
+case. A bowl of bún thịt nướng with spring rolls came back as `Bún thịt nướng
+chả giò` — one item, 95% confidence, 0 kcal. The table had `Bún thịt nướng` and
+`Chả giò` as separate rows and nothing for the combination, so it missed. The
+same photo had resolved a few days earlier, because that call the model had
+named it `Bún thịt nướng`: **the model's naming is not stable between calls, and
+exact matching turns that into a coin flip.**
+
+The model was not wrong either — a Vietnamese menu really does list that as one
+line, which is precisely what the prompt asks for. The mismatch is between how
+menus name combinations and how the table is keyed, so the fix was a **row of
+its own** (`recipes.py`), not an alias: aliasing the compound name onto the
+plain bowl would have priced 450 g at 129 kcal/100 g instead of 161 and lost the
+rolls at 319 — 580 kcal against 724, a silent 20% under-count. Under-counting is
+the one thing the unresolved state exists to prevent, so a combination dish that
+is not in the table must keep missing until someone writes it a recipe.
+
 So a scan can come back 0 kcal with nothing whatsoever wrong in the code. If
-that happens, suspect the granularity of the names before anything else.
+that happens, suspect the granularity of the names before anything else — and
+if the name looks *right*, check whether it is a combination the table has only
+the halves of.
 
 **`qwen` has never been run.** No endpoint was available, so its request shape
 follows the published OpenAI-compatible contract but is unproven.

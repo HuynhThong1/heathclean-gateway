@@ -204,6 +204,17 @@ DERIVED: List[DerivedFood] = [
         ["bun thit nuong"],
     ),
     DerivedFood(
+        "Bún thịt nướng chả giò",
+        "Grilled pork noodles with fried spring rolls",
+        161,
+        7.8,
+        15.4,
+        7.6,
+        (168914, 168232, 169714, 168374, 175180, 170393, 169251, 171411, 173806, 168429, 168409, 170393, 174531, 169655, 171411,),
+        433,
+        ["bun thit nuong cha gio", "bun thit nuong nem ran"],
+    ),
+    DerivedFood(
         "Bún chả",
         "Grilled pork with noodles",
         156,

@@ -2,6 +2,7 @@
 
 import pytest
 
+from app.nutrition.local import local_record
 from app.nutrition.vietnamese_foods import FOODS, lookup
 
 
@@ -34,6 +35,47 @@ def test_a_near_miss_still_does_not_resolve(written):
     that was not asked for. A preparation variant is a miss, and the client is
     expected to let the user supply nutrition instead."""
     assert lookup(written) is None
+
+
+class TestCombinationDishes:
+    """A dish a menu sells as one line, made of two the menu also sells alone.
+
+    These come back from the model as a single compound name — it is asked to
+    name dishes the way a menu lists them, and a menu really does write "Bún
+    thịt nướng chả giò". Before this row that name resolved to nothing while
+    "Bún thịt nướng" on its own resolved fine, so the *same photo* landed either
+    way depending on how the model felt like naming it that call.
+    """
+
+    def test_the_combination_resolves(self):
+        assert local_record("Bún thịt nướng chả giò").name == "Bún thịt nướng chả giò"
+
+    @pytest.mark.parametrize(
+        "written",
+        ["bun thit nuong cha gio", "Bún thịt nướng nem rán", "BUN THIT NUONG CHA GIO"],
+    )
+    def test_its_spellings_reach_it(self, written):
+        assert local_record(written).name == "Bún thịt nướng chả giò"
+
+    def test_the_components_still_resolve_on_their_own(self):
+        """Adding the combination must not shadow either dish it is made of."""
+        assert local_record("Bún thịt nướng").name == "Bún thịt nướng"
+        assert local_record("Chả giò").name == "Chả giò"
+
+    def test_it_is_denser_than_the_plain_bowl_and_lighter_than_the_rolls(self):
+        """**Why this is a row and not an alias.**
+
+        Aliasing the compound name onto "Bún thịt nướng" would have resolved it
+        instantly and priced the whole serving at the plain bowl's density,
+        losing the rolls — which are more than twice as dense. That is a silent
+        under-count, and under-counting is the one thing the unresolved state
+        exists to prevent, so the combination has to sit strictly between them.
+        """
+        plain = local_record("Bún thịt nướng").calories_per_100g
+        rolls = local_record("Chả giò").calories_per_100g
+        combined = local_record("Bún thịt nướng chả giò").calories_per_100g
+
+        assert plain < combined < rolls
 
 
 def test_calories_are_self_consistent_with_the_macros():

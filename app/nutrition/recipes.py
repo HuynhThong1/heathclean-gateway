@@ -332,6 +332,41 @@ RECIPES: List[Recipe] = [
         ["bun thit nuong"],
     ),
     Recipe(
+        "Bún thịt nướng chả giò",
+        "Grilled pork noodles with fried spring rolls",
+        [
+            Ingredient(RICE_NOODLES, 180),
+            # Less pork than the plain bowl's 70 g: the rolls carry part of the
+            # protein, and a shop that adds them does not also serve a full
+            # portion of grilled meat.
+            Ingredient(PORK_LOIN, 55),
+            # Two rolls, which is what a bowl comes with — the `Chả giò` recipe's
+            # own serving scaled by about two thirds. Written out rather than
+            # referenced, so the grams stay checkable in one place, which is what
+            # this file asks a reader to check.
+            Ingredient(RICE_FLOUR, 14, "chả giò wrappers"),
+            Ingredient(PORK_GROUND, 27, "chả giò filling"),
+            Ingredient(SHRIMP, 10, "chả giò filling"),
+            Ingredient(CARROT, 10, "chả giò filling"),
+            Ingredient(MUSHROOM, 7, "chả giò filling"),
+            Ingredient(OIL, 12, "absorbed frying the rolls"),
+            Ingredient(PEANUTS, 8),
+            Ingredient(LETTUCE, 30),
+            Ingredient(CUCUMBER, 30),
+            Ingredient(CARROT, 20, "đồ chua on top"),
+            Ingredient(FISH_SAUCE, 20, "nước chấm"),
+            Ingredient(SUGAR, 5),
+            Ingredient(OIL, 5, "marinade"),
+        ],
+        ["bun thit nuong cha gio", "bun thit nuong nem ran"],
+        note="A row of its own rather than an alias of 'Bún thịt nướng', and "
+        "that is the whole point of it. A Vietnamese menu lists this as one "
+        "line, so the model names it as one — but aliasing it onto the plain "
+        "bowl would price the whole serving at that dish's density and lose the "
+        "rolls, which are more than twice as dense. Under-counting is what the "
+        "unresolved state exists to prevent, so the combination is its own dish.",
+    ),
+    Recipe(
         "Bún chả",
         "Grilled pork with noodles",
         [
