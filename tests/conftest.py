@@ -31,3 +31,10 @@ os.environ["NUTRITION_SOURCES"] = "local"
 # the guarded behaviour set the variable themselves with `monkeypatch.setenv` —
 # `require_api_key` reads it per request, so that is enough.
 os.environ["GATEWAY_API_KEY"] = ""
+# Same reasoning again, for the rate limits: the suite fires dozens of requests
+# from one address in well under a minute, which is exactly what the burst limit
+# exists to stop. Disabling both here keeps every other test measuring what it
+# means to measure; `test_rate_limit.py` sets its own values with
+# `monkeypatch.setenv`, because the limits are read per request.
+os.environ["RATE_LIMIT_PER_MINUTE"] = "0"
+os.environ["RATE_LIMIT_PER_DAY"] = "0"

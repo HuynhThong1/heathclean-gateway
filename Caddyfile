@@ -1,0 +1,58 @@
+# TLS for the gateway, and nothing else.
+#
+# This is a reverse proxy, not an API gateway: the service behind it already is
+# one — it fronts the recognition providers and the nutrition sources, and it is
+# the only thing that understands the contract. Caddy is here for the two jobs
+# that genuinely belong in front of a process: a certificate, and a body limit
+# applied before the application's parser sees anything.
+#
+# `GATEWAY_DOMAIN` comes from `.env` via `docker-compose.yml`. A domain is the
+# whole point — a certificate cannot be issued for an IP address, which is why
+# plain `http://<ip>:8000` was always a stopgap.
+
+{$GATEWAY_DOMAIN} {
+	# An email turns on expiry notices from the CA. Optional, and left out
+	# rather than wired to a possibly-empty variable: Caddy renews unprompted,
+	# so this only matters when renewal has already been failing for weeks.
+	# tls you@example.com
+
+	encode zstd gzip
+
+	# A coarse outer bound, deliberately above `MAX_IMAGE_BYTES` (8 MiB) rather
+	# than equal to it. Multipart framing and the boundary make the body larger
+	# than the image, so matching the two exactly would reject a legal 8 MiB
+	# photo here — with a Caddy error the client cannot interpret — instead of
+	# the app's own 413. What this stops is the gigabyte upload that would
+	# otherwise reach uvicorn's parser to be buffered before anyone measures it.
+	request_body {
+		max_size 12MB
+	}
+
+	# No `header_up X-Forwarded-For` here, and that is deliberate rather than an
+	# omission. Caddy (tested: v2.11.4) **replaces** a caller-supplied
+	# `X-Forwarded-For` with the address it actually accepted the connection
+	# from, unless that peer is listed in the global `trusted_proxies` — which is
+	# empty by default. Sending `X-Forwarded-For: 1.2.3.4` through this config
+	# arrives upstream as the real peer address, verified, not assumed. Setting
+	# the header explicitly would only re-state that, and `caddy validate` warns
+	# about it. The rate limiter reads the *last* entry for the same reason from
+	# the other side: it is the one hop a caller cannot choose, and it stays
+	# correct if a second proxy is ever put in front and trusted here.
+	reverse_proxy gateway:8000 {
+		# The gateway awaits a hosted model on every analysis, and a cold model
+		# can take a while. Caddy's default read timeout is unlimited, but the
+		# dial has to survive a container restart mid-deploy.
+		transport http {
+			dial_timeout 5s
+		}
+	}
+
+	log {
+		# Caddy's access log is where the real client address lives once the
+		# gateway is behind a proxy: uvicorn sees the proxy's container IP, and
+		# teaching it otherwise means trusting forwarded headers in a second
+		# place. One place is enough.
+		output stdout
+		format console
+	}
+}

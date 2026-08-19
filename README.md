@@ -206,6 +206,55 @@ providers read their configuration at import. Containerised that is
 `docker compose restart`. `GATEWAY_API_KEY` is the exception: it is read per
 request, so rotating it takes effect on the mount without one.
 
+### A leaked key is a budget question, not an auth one
+
+`GATEWAY_API_KEY` ships inside an iOS bundle, so treat it as extractable —
+authentication decides *whether* a caller may spend the operator's model quota
+and nothing can stop the secret leaking. What is left to decide is how much, and
+that splits in two (`app/rate_limit.py`):
+
+| Variable | Default | |
+| --- | --- | --- |
+| `RATE_LIMIT_PER_MINUTE` | `10` | Per client address, rolling minute. A route dependency, so a malformed request counts too: at this timescale what is being rationed is the gateway's own attention. `0` disables it. |
+| `RATE_LIMIT_PER_DAY` | `200` | Calls to one model per rolling 24h, **per provider** — the free tier's quota is per model, so a day spent on `gemini` must not close the door on `qwen`. Consumed in the handler immediately before the provider call, so a 415 on a PDF costs no quota. `0` disables it. |
+| `TRUST_PROXY_HEADERS` | unset | Whether `X-Forwarded-For` may be believed. See below. |
+
+The daily cap is the one that matters. A burst limit protects a bill; **429 from
+a provider is not transient** — the free tier resets at midnight Pacific and the
+app is dead until then. So `RATE_LIMIT_PER_DAY` has to sit *below* whatever the
+key actually has, and the default is deliberately not any published free-tier
+number: those are revised without notice, and a guard that mirrors them is not a
+guard.
+
+```
+$ curl -s -o /dev/null -w '%{http_code} %header{Retry-After}\n' \
+    -X POST http://127.0.0.1:8000/v1/meals/analyze \
+    -H "X-API-Key: $GATEWAY_API_KEY" -F "image=@meal.jpg;type=image/jpeg"
+429 43
+```
+
+`GET /v1/providers` reports both limits and what is spent, which is how a deploy
+gets checked the way `"configured": true` checks credentials:
+
+```json
+{"rateLimit": {"requestsPerMinutePerClient": 10, "modelCallsPerDay": 200,
+               "trustProxyHeaders": false, "trackedClients": 3,
+               "modelCallsToday": {"gemini": 41}}}
+```
+
+Two properties worth knowing before trusting these numbers:
+
+- **The counters live in this process.** The Dockerfile runs a single uvicorn
+  worker for an unrelated reason — every request awaits a hosted model, which
+  async already overlaps — and that is what makes an in-process counter honest.
+  Add workers and each gets its own full allowance.
+- **A restart forgives everything.** `docker compose restart` is an operator
+  action, not something a caller can reach, so this is a cost of the simple
+  design rather than a hole in it.
+
+Authentication runs first: an unauthenticated flood gets 401, never a 429 that
+would confirm the endpoint is real and busy.
+
 ### Plain HTTP is a stopgap
 
 An iOS client cannot reach `http://<ip>:8000` without an App Transport Security
@@ -213,10 +262,53 @@ exception naming that exact address, and the key then crosses the network in
 clear text. That is acceptable while testing against an IP and not acceptable
 in the client's hands.
 
-The fix is a domain, not more configuration. With one pointed at the VPS, put
-Caddy in front — it obtains and renews a certificate unprompted, the compose
-service stops publishing 8000 to the world, and the iOS side drops its ATS
+The fix is a domain, not more configuration. Point an A record at the VPS, open
+80 and 443, and start the `tls` profile:
+
+```bash
+# .env
+GATEWAY_DOMAIN=gateway.example.com
+GATEWAY_BIND=127.0.0.1
+TRUST_PROXY_HEADERS=1
+```
+
+```bash
+docker compose --profile tls up -d
+curl -s https://gateway.example.com/healthz
+```
+
+Caddy obtains and renews the certificate unprompted — port 80 is how it proves
+control of the name, so a firewall that only opens 443 fails the first issuance
+rather than the renewal. `GATEWAY_BIND=127.0.0.1` stops publishing 8000 to the
+world; Caddy still reaches the gateway over the compose network, because
+publishing a port only ever decides who *else* can. The iOS side drops its ATS
 exception entirely.
+
+Without `--profile tls` nothing changes: the `caddy` service does not exist, and
+a plain-HTTP test against an IP still works. (The domain is not checked by
+compose — required-variable syntax there is interpolated before profiles are
+selected, so it would break the no-TLS path too. An unset `GATEWAY_DOMAIN` makes
+Caddy itself refuse to start.)
+
+**The `caddy_data` volume has to persist.** It holds the certificate and the
+ACME account key; lose it on each redeploy and every deploy asks the CA for a new
+certificate, which is how a deploy loop meets Let's Encrypt's rate limit — a
+limit measured in *certificates per week per domain*.
+
+Two consequences of having a proxy in front, both about addresses:
+
+- **`TRUST_PROXY_HEADERS=1` belongs with `GATEWAY_BIND=127.0.0.1`, never
+  without it.** The per-client limit needs the caller's address, and behind a
+  proxy that only exists in `X-Forwarded-For` — a header the caller writes. Caddy
+  replaces a supplied value with the address it actually accepted the connection
+  from (verified against v2.11.4; its `trusted_proxies` is empty by default), so
+  through Caddy the header is trustworthy. Reachable directly on 8000, it is not:
+  a caller picks a new address per request and the limit evaporates. The limiter
+  reads the *last* entry for the same reason — it is the one hop a caller cannot
+  choose.
+- **Uvicorn's access log now shows Caddy's container address**, not the client's.
+  Caddy's own access log has the real one. Teaching uvicorn to read forwarded
+  headers would mean trusting them in a second place, and one is enough.
 
 ## Switching models
 

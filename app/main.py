@@ -14,6 +14,7 @@ from typing import List, Optional
 from fastapi import Depends, FastAPI, File, Header, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
+from . import rate_limit
 from .logging_config import configure_logging
 from .nutrition.repository import build_repository
 from .nutrition.resolver import resolve_with_repository, total
@@ -106,8 +107,18 @@ async def healthz() -> dict:
 @app.get("/v1/providers", dependencies=[Depends(require_api_key)])
 async def providers() -> dict:
     """What models exist and which are usable — so the client can show the
-    truth rather than offering a provider that has no key."""
-    return {"default": registry.DEFAULT_PROVIDER, "providers": registry.available()}
+    truth rather than offering a provider that has no key.
+
+    `rateLimit` rides along because the daily cap is *per provider*: "which
+    models are usable right now" is not answered by credentials alone once one
+    of them can be a day's quota away from usable. Additive key — a client
+    reading only `default` and `providers` is unaffected.
+    """
+    return {
+        "default": registry.DEFAULT_PROVIDER,
+        "providers": registry.available(),
+        "rateLimit": rate_limit.status(),
+    }
 
 
 @app.get("/v1/nutrition/sources", dependencies=[Depends(require_api_key)])
@@ -119,7 +130,9 @@ async def nutrition_sources() -> dict:
 @app.post(
     "/v1/meals/analyze",
     response_model=AnalyzeResponse,
-    dependencies=[Depends(require_api_key)],
+    # Order matters: authentication first, so an unauthenticated flood gets 401
+    # rather than a 429 that would confirm the endpoint exists.
+    dependencies=[Depends(require_api_key), Depends(rate_limit.limit_request_rate)],
 )
 async def analyze_meal(
     image: UploadFile = File(...),
@@ -150,6 +163,11 @@ async def analyze_meal(
             status_code=413,
             detail="Image exceeds {} bytes".format(MAX_IMAGE_BYTES),
         )
+
+    # After validation, before the call: a 415 or an empty body costs the
+    # provider nothing and must not spend a day's allowance. See
+    # `rate_limit.reserve_model_call`.
+    rate_limit.reserve_model_call(provider.name)
 
     try:
         foods = await provider.recognize(data, mime)

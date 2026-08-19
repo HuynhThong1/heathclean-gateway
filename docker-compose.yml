@@ -10,7 +10,13 @@ services:
     container_name: healthclean-gateway
     restart: unless-stopped
     ports:
-      - "8000:8000"
+      # `GATEWAY_BIND=127.0.0.1` in `.env` once Caddy is in front. Caddy reaches
+      # the gateway over the compose network either way — publishing a port is
+      # only about who *else* can — and a loopback-only publish is exactly what
+      # makes `TRUST_PROXY_HEADERS=1` safe: a forwarded header is trustworthy
+      # only when the proxy is the sole route in. Default stays 0.0.0.0 so the
+      # documented plain-HTTP test against an IP keeps working.
+      - "${GATEWAY_BIND:-0.0.0.0}:8000:8000"
     volumes:
       # Mounted, not copied. The image stays free of credentials, and changing
       # a key is `docker compose restart` rather than a rebuild — which is what
@@ -21,6 +27,17 @@ services:
       # actually set and fails the deploy loudly if it is not. An exposed port
       # with no key is a hosted-model bill anyone can run up.
       GATEWAY_API_KEY: ${GATEWAY_API_KEY:?set GATEWAY_API_KEY in .env before deploying}
+      # A leaked key is a spending limit question, not an authentication one:
+      # the key ships inside an iOS bundle and is extractable. Unset here would
+      # mean the module defaults (10/min per client, 200 model calls/day), which
+      # are sane — these are named explicitly so a deploy states its own budget.
+      # See `app/rate_limit.py`.
+      RATE_LIMIT_PER_MINUTE: ${RATE_LIMIT_PER_MINUTE:-10}
+      RATE_LIMIT_PER_DAY: ${RATE_LIMIT_PER_DAY:-200}
+      # Only sound when the gateway is not publicly reachable — set `GATEWAY_BIND`
+      # to 127.0.0.1 with the `tls` profile. Otherwise a caller writes their own
+      # `X-Forwarded-For` and picks a fresh allowance per request.
+      TRUST_PROXY_HEADERS: ${TRUST_PROXY_HEADERS:-0}
       # Colour has to be asked for here. A container's stdout is a pipe, so the
       # formatter's own auto-detection correctly answers "not a terminal" even
       # when the person running `docker compose logs -f` is sitting at one.
@@ -36,3 +53,39 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
+
+  caddy:
+    # Started only by `docker compose --profile tls up -d`. Without the profile
+    # this service does not exist, so a plain-HTTP test against an IP is still a
+    # bare `docker compose up -d` and needs no domain.
+    profiles: ["tls"]
+    image: caddy:2-alpine
+    container_name: healthclean-caddy
+    restart: unless-stopped
+    depends_on:
+      - gateway
+    ports:
+      - "80:80"
+      - "443:443"
+      # HTTP/3. Also what makes port 443/udp worth opening on the VPS firewall.
+      - "443:443/udp"
+    environment:
+      # Not `${GATEWAY_DOMAIN:?...}`, however much the rest of this file argues
+      # for failing loudly: compose interpolates the whole file before it
+      # selects profiles, so a required-variable check here would break the
+      # no-TLS path too. Unset means Caddy itself refuses to start — the error
+      # names the Caddyfile rather than this line, so look here when it does.
+      GATEWAY_DOMAIN: ${GATEWAY_DOMAIN:-}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # Certificates and the ACME account key. **This has to persist.** A named
+      # volume rather than a bind mount because Caddy runs as root in this image
+      # and the host uid question from `.env` above does not need repeating; lose
+      # it and every redeploy asks the CA for a new certificate, which is how a
+      # deploy loop meets Let's Encrypt's rate limit.
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:
